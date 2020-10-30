@@ -15,10 +15,34 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-Use tidybvrse syntax with r stan brms 
+This repository contains my own personal notes and code following Richard Mcelreath's text "Statistical Rethinking Bayesian Statistics with R and stan". These notes are public but are for my own personal reference and are not endorsed by anyone other than myself. 
+
+### Resources: 
 https://bookdown.org/ajkurz/Statistical_Rethinking_recoded/
 
 Book soln
 https://github.com/jffist/statistical-rethinking-solutions  
 and 
 https://github.com/cavaunpeu/statistical-rethinking
+
+```{r,echo=FALSE}
+suppressMessages(library(rethinking))
+n_samples = 1000 
+p = rep( NA , n_samples ) 
+p[1] = 0.5
+W = 6 
+L = 3 
+
+for ( i in 2:n_samples ) {
+  p_new <- rnorm( n = 1 ,mean =  p[i-1] , sd = 0.1 )
+  if ( p_new < 0 ) p_new <- abs( p_new )
+  if ( p_new > 1 ) p_new <- 2 - p_new
+  q0 <- dbinom(x =  W , size =  W+L , prob =  p[i-1] )
+  q1 <- dbinom( x = W , size = W+L ,prob =  p_new )
+  p[i] <- ifelse( runif(1) < q1/q0 , p_new , p[i-1] )
+}
+
+dens( p , xlim=c(0,1) )
+curve( dbeta( x , W+1 , L+1 ) , lty=2 , add=TRUE )
+```
+
