@@ -42,9 +42,8 @@ dbinom(x = 9, size = 10, prob = 0.3)
 rbinom(n = 50,size = 10, 0.7)
 ```
 
-    ##  [1]  8  6  7  6  6  7  8  7  8  6  8  7  7  7  4  6  8  5  7  8  4  6  6
-    ## [24]  6  7  4  5  7  9  6  6  6  6  7  8  8  3  6  5  8  7  7  8  5  8  6
-    ## [47] 10  8  8  9
+    ##  [1] 4 8 8 8 6 6 6 6 8 8 6 6 6 9 8 7 9 6 6 7 7 9 4 7 7 6 6 9 8 6 9 8 6 5 8
+    ## [36] 6 8 7 6 5 6 7 9 6 4 5 7 8 6 5
 
 The binomial distribution is the maximum entropy (Ch 10) way to count
 binary events.
@@ -160,7 +159,7 @@ precis( globe.qa )
 ```
 
     ##        mean        sd      5.5%     94.5%
-    ## p 0.6666794 0.1571308 0.4155541 0.9178047
+    ## p 0.6666669 0.1571337 0.4155369 0.9177969
 
 Assuming a Gaussian posterior, it is maximized at 0.67 with a SD of
 0.16.
