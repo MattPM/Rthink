@@ -1,12 +1,16 @@
 ---
 title: 'Chapter 2'
 subtitle: small worlds and large worlds
-output:
-  html_document:
-    df_print: paged
-editor_options:
-  chunk_output_type: inline
+output: github_document
 ---
+
+<!--   output: -->
+<!--   html_document: -->
+<!--     df_print: paged -->
+
+<!-- editor_options: -->
+<!--   chunk_output_type: inline -->
+
 ```{r}
 suppressMessages(library(tidyverse))
 suppressMessages(library(rethinking))
