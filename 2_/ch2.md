@@ -42,8 +42,9 @@ dbinom(x = 9, size = 10, prob = 0.3)
 rbinom(n = 50,size = 10, 0.7)
 ```
 
-    ##  [1] 4 8 8 8 6 6 6 6 8 8 6 6 6 9 8 7 9 6 6 7 7 9 4 7 7 6 6 9 8 6 9 8 6 5 8
-    ## [36] 6 8 7 6 5 6 7 9 6 4 5 7 8 6 5
+    ##  [1]  9  9  8  8  7  8  6  6  7  7  9  9  8  9  6  6  7  5  8  8  8  5  6
+    ## [24] 10  7  8  7  8  5  5  5  5  7  6  9  7  7  6  6 10  6  4  7  7  8  8
+    ## [47]  7  5  9  6
 
 The binomial distribution is the maximum entropy (Ch 10) way to count
 binary events.
@@ -159,7 +160,7 @@ precis( globe.qa )
 ```
 
     ##        mean        sd      5.5%     94.5%
-    ## p 0.6666669 0.1571337 0.4155369 0.9177969
+    ## p 0.6666598 0.1571354 0.4155271 0.9177925
 
 Assuming a Gaussian posterior, it is maximized at 0.67 with a SD of
 0.16.
@@ -247,3 +248,224 @@ plausible value for the parameters before accounting for the data. The
 plausibliities after accounting for the data are computed by Bayes
 theorm, resulting in a posterior distribution. These are fit with the 3
 options above.
+
+## Qs
+
+2E1.  
+2 + 4
+
+2E2.
+
+3
+
+2E3.
+
+1, 4
+
+4 is the product rule P(A and B) = P(A | B) \* P(B)
+
+2E4.
+
+2M1. Recall the globe tossing model from the chapter. Compute and plot
+the grid approximate posterior distribution for each of the following
+sets of observations. In each case, assume a uniform prior for p.
+
+1)  W, W, W
+
+<!-- end list -->
+
+``` r
+# define a grid of parameter values 
+# define prior (in this case uniform)
+# compute value for the prior for each parameter value on the grid 
+# compute the Likelihood at each parameter value
+# condition (compute posterior)  
+# standardize posterior 
+
+# the grid is a grid of potential parameter values for proportion of water  
+pgrid = seq( from=0 , to=1 , length.out= 100)
+
+# define prior 
+prior = rep( 1 , 100 )
+
+# compute likelihood
+likelihood = 
+  dbinom(
+    # number of heads 
+    x = 3,
+    # number of tosses 
+    size = 3, 
+    # probability of heads = the model parameter = the vector defined by the grid 
+    prob = pgrid)
+
+# compute product of likelihood and prior 
+posterior = likelihood * prior 
+
+# standardize the posterior
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+posterior = likelihood * prior / sum(likelihood*prior)
+
+df = data.frame(pgrid = pgrid, posterior = posterior)
+ggplot(data = df, aes(x = pgrid, y = posterior)) + 
+  geom_line() +
+  ggtitle("3W in 3 tosses")
+```
+
+![](ch2_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+pgrid = seq( from=0 , to=1 , length.out= 100)
+prior = rep( 1 , 100 )
+likelihood = 
+  dbinom(
+    # number of heads 
+    x = 5,
+    # number of tosses 
+    size = 7, 
+    # probability of heads = the model parameter = the vector defined by the grid 
+    prob = pgrid)
+
+posterior = likelihood * prior / sum(likelihood * prior)
+
+df = data.frame(pgrid = pgrid, posterior = posterior)
+ggplot(data = df, aes(x = pgrid, y = posterior)) + 
+  geom_line() +
+  ggtitle("5W in 7tosses")
+```
+
+![](ch2_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+2M2. assume a prior for p that = zero when p \< 0.5 and = positive
+constant when p ≥ 0.5.
+
+``` r
+prior = c(
+  rep(0, 50), 
+  rep(0.7, 50)
+) 
+pgrid = seq( from=0 , to=1, length.out = 100 ) 
+likelihood = 
+  dbinom(
+    # number of heads 
+    x = 5,
+    # number of tosses 
+    size = 7, 
+    # probability of heads = the model parameter = the vector defined by the grid 
+    prob = pgrid)
+
+posterior = likelihood * prior / sum(likelihood * prior)
+
+df = data.frame(pgrid = pgrid, posterior = posterior)
+ggplot(data = df, aes(x = pgrid, y = posterior)) + 
+  geom_line() +
+  ggtitle("5W in 7tosses, prior = c( rep(0, 50), rep(0.7, 50) ) ")
+```
+
+![](ch2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+2M3. Suppose there are two globes, one for Earth and one for Mars. The
+Earth globe is 70% covered in water. The Mars globe is 100% land.
+Further suppose that one of these globes—you don’t know which—was tossed
+in the air and produced a “land” observation. Assume that each globe was
+equally likely to be tossed. Show that the posterior probability that
+the globe was the Earth, conditional on seeing “land” (Pr(Earth |
+land)), is 0.23.
+
+``` r
+# params 
+lerth = 0.3 
+lmrs = 1
+# 
+ptoss = 0.5 
+
+# data 
+"L"
+```
+
+    ## [1] "L"
+
+``` r
+# (Pr(Earth | land)) =  (Pr( land | earth )) * p(earth) / pland
+
+( 0.3 * 0.5 ) 
+```
+
+    ## [1] 0.15
+
+2M4. Suppose you have a deck with only three cards. Each card has two
+sides, and each side is either black or white. One card has two black
+sides. The second card has one black and one white side. The third card
+has two white sides. Now suppose all three cards are placed in a bag and
+shuffled. Someone reaches into the bag and pulls out a card and places
+it flat on a table. A black side is shown facing up, but you don’t know
+the color of the side facing down. Show that the probability that the
+other side is also black is 2/3. Use the counting method (Section 2 of
+the chapter) to approach this problem. This means counting up the ways
+that each card could produce the observed data (a black side facing up
+on the table).
+
+2M5. Now suppose there are four cards: B/B, B/W, W/W, and another B/B.
+Again suppose a card is drawn from the bag and a black side appears face
+up. Again calculate the probability that the other side is black.
+
+2M6. Imagine that black ink is heavy, and so cards with black sides are
+heavier than cards with white sides. As a result, it’s less likely that
+a card with black sides is pulled from the bag. So again assume there
+are three cards: B/B, B/W, and W/W. After experimenting a number of
+times, you conclude that for every way to pull the B/B card from the
+bag, there are 2 ways to pull the B/W card and 3 ways to pull the W/W
+card. Again suppose that a card is pulled and a black side appears face
+up. Show that the probability the other side is black is now 0.5. Use
+the counting method, as before.
+
+2M7. Assume again the original card problem, with a single card showing
+a black side face up. Before looking at the other side, we draw another
+card from the bag and lay it face up on the table. The face that is
+shown on the new card is white. Show that the probability that the first
+card, the one showing a black side, has black on its other side is now
+0.75. Use the counting method, if you can. Hint: Treat this like the
+sequence of globe tosses, counting all the ways to see each observation,
+for each possible first card.
+
+Hard. 48
+
+2.  SMALL WORLDS AND LARGE WORLDS
+
+2H1. Suppose there are two species of panda bear. Both are equally
+common in the wild and live in the same places. They look exactly alike
+and eat the same food, and there is yet no genetic assay capable of
+telling them apart. They differ however in their family sizes. Species A
+gives birth to twins 10% of the time, otherwise birthing a single
+infant. Species B births twins 20% of the time, otherwise birthing
+singleton infants. Assume these numbers are known with certainty, from
+many years of field research.
+
+Now suppose you are managing a captive panda breeding program. You have
+a new female panda of unknown species, and she has just given birth to
+twins. What is the probability that her next birth will also be twins?
+
+2H2. Recall all the facts from the problem above. Now compute the
+probability that the panda we have is from species A, assuming we have
+observed only the first birth and that it was twins.
+
+2H3. Continuing on from the previous problem, suppose the same panda
+mother has a second birth and that it is not twins, but a singleton
+infant. Compute the posterior probability that this panda is species A.
+
+2H4. A common boast of Bayesian statisticians is that Bayesian inference
+makes it easy to use all of the data, even if the data are of different
+types.
+
+So suppose now that a veterinarian comes along who has a new genetic
+test that she claims can identify the species of our mother panda. But
+the test, like all tests, is imperfect. This is the information you have
+about the test:
+
+• The probability it correctly identifies a species A panda is 0.8.
+
+• The probability it correctly identifies a species B panda is 0.65. The
+vet administers the test to your panda and tells you that the test is
+positive for species A. First ignore your previous information from the
+births and compute the posterior probability that your panda is species
+A. Then redo your calculation, now using the birth data as well.
