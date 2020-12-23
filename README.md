@@ -14,8 +14,9 @@ Stan*](https://xcelab.net/rm/statistical-rethinking/)" by Richard
 Mcelreath. This repository is not endorsed by anyone affiliated with the
 textbook they are simply notes.
 
-### Resources:
+### Book Resources:
 
-<https://bookdown.org/ajkurz/Statistical_Rethinking_recoded/>
+<https://xcelab.net/rm/statistical-rethinking/>
+<https://vincentarelbundock.github.io/rethinking2/>
 
 ![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
