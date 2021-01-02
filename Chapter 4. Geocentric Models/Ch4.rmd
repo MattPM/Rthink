@@ -1,0 +1,190 @@
+---
+title: 'Chapter 4 Geocentric Models'
+output: github_document
+---
+
+<!--   output: -->
+<!--   html_document: -->
+<!--     df_print: paged -->
+
+<!-- editor_options: -->
+<!--   chunk_output_type: inline -->
+
+*Linear regression is the geocentric model of applied statistics*  
+Linear regression is a descriptive model corresponding to many process models. It is a 'golem' that tries to learn the mean and variance of some measurement from an addative combination of other measurements. 
+
+As a Bayesian procedure we interpret linear regression under a Bayesian framework, it uses a Gaussian distribution to describe the uncertainty about some measurement of interest. 
+
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(rethinking))
+```
+
+Motivating normal distributions.
+
+Random walks from a 50 yard line L / R based on a coin flip on a field will converge to normally distributed distances from the center. The intuition is that when you add many *fluctuations* together they converge to a normal distribution. There are many possible combinations of 16 coin flips. 
+
+Each coin flip is a fluctuation, whatever the average value of the source distribution, each sample from it can be thought of as a fluctuation from that sample. **Any process that adds together random values from the same distribution converges to normal** This is basically the central limit theorm but it is not stated in the text explicitally and gives a more intuitive explanation- the more terms you add (rhe more samples you take) the more likely an extreme value in one direction will be cancelled by another extreme value in the opposite direction making the most probable total sum a 0. The result is a 0 centered gaussian distribution. 
+
+```{r}
+# To simulate this, we generate for each person a list of 16 random numbers between −1 and 1.
+# These are the individual steps. Then we add these steps together to get the position after 16 steps.
+pos  = replicate( 1000 , sum( runif(16,-1,1) ) )
+plot(density(pos))
+```
+
+```{r}
+# 25 random numbers between -1 and 1 
+runif(n = 25 ,min = -1, max = 1)
+
+# sum of 25 numbers betweeen -1 and 1
+set.seed(1)
+sum(runif(n = 25 ,min = -1, max = 1))
+
+pos2 = replicate(n = 1e4, sum(runif(n = 25 ,min = -1, max = 1)))
+plot(density(pos2))
+```
+
+Processes that lead to a Gaussian distribution: 
+Addition  
+Multiplication (which is addition)  
+Logarithms of products (which is addition)  
+
+Bell curves tell you almost nothing about the generative process, all that is preserved is the two moments mu and sigma. 
+
+
+## Convergence on a Gaussian via Multiplication of small effect sizes  
+
+assume growth rate is positively influenced by 12 alleles that increase growth by a percentage. That meand their effects are multiplicative. 
+```{r}
+# simulate the product of 12 random alleles with multiplicative increase on growth of 0-10%.
+prod(1 + runif(n = 12,min = 0, max = 0.1))
+
+```
+
+^ This is a growth rate. 
+
+```{r}
+# distribution of growth rates 
+dens(replicate(n = 1000, expr = prod(1 + runif(n = 12,min = 0, max = 0.1)) ))
+```
+
+The *product* of these ransdom fluctuations is still Gaussian because multiplying small numbersi is ` equivalent to adding numbers. The effect size of each locus is small. *Small effects multiplied together are approximately addative *
+
+If we assume the effect sizes can be high as 80%, we don't get a Gaussian distribution.
+
+```{r}
+dens(replicate(n = 1000, expr = prod(1 + runif(n = 12,min = 0, max = 0.8)) ))
+```
+
+### Large deviations multiplied together *on a log scale* converge to Gaussian
+
+Adding logs is the same as multiplying the original numbers, multiplicative interactions of large deviations can produce Gaussian distributions if we measure the outcome on a log scale. 
+
+```{r}
+dens(replicate(n = 1000, expr = log10( prod(1 + runif(n = 12,min = 0, max = 0.8)) ))) 
+```
+
+### Justifications for using Gaussians  
+Ontological (meaning there is a priori evidence not requiring reason) - the world is full of Gaussian distributions. 
+Epistomological  When all we are willing to say of a measure is the mean and variance, the Gaussian is the most consistent with our assumptions and can be realized the largest number of ways. 
+
+The Gaussian distribution 
+p(y | µ, sigma) ~ exp (y - mu)^2 / sigma 
+
+Basically the intuition behind the shape is the meat is in the y - mu squared which gives the quadratic shape and exponentiating it gives the long tails https://www.wolframalpha.com/input/?i=exp%28-x%5E2++%29 
+
+Sometimes gaussiann is defined with tau which = 1 / sigma squared 
+
+### Language of statistical models
+
+Globe toss example  
+W ~ Binomial(N, p)  
+p ~ Uniform( 0, 1)  
+
+1) The count W is distributed binomially with sample size N and probability p.  
+2) The prior for p is assumed to be uniform between zero and one.  
+
+1 - the first line always defines the likelihood function used in Bayes Theorm. 
+2 - the other lines define the priors.  
+The symbol "~" means there is a stochastic relationship. A stochastic relationship is the mapping of a variable or parameter onto a distribution. It is stochastic because no single instance of the variable is known with certainty. The mapping is instead probabilistic. Some values are more probabilistic than others mut many different values are plausible under any model. 
+
+the model definition to define the posterior distribution using Bayes theorm: 
+
+probability of prior is proportional to the likelihood times the pripor / average probability. 
+
+Pr(p | w, n) =  Binomial(w | n, p) * Uniform(p | 0, 1) / ∫ Binomial(w | n, p)Uniform(p | 0, 1)dp  
+
+## Bayesian model of height - Howell data 
+
+Constructing a Bayesian machine that considers possible distributions of mu and sigma and ranks them by posterior plausibility - the logical compatibility of the distribution with the data and the model. The model estimates a entire posterior distributionof gaussian distributions - a distribution of distributions. 
+
+```{r}
+data("Howell1")
+d  = Howell1
+str(d)
+
+# very nice function from rethinking: 
+precis(d)
+
+# only consider adults 
+d2 = d %>% filter( age > 18)
+```
+
+A naive non bayesian fully specified model of height from the data (not part of book)
+
+```{r}
+
+
+scd = d %>% scale %>% as.data.frame
+f1 = height ~ 0 +  age + male + weight
+m1 = lm(formula = f1, data = scd)  
+
+```
+
+### the Bayesian model 
+First the emperical distribution needn't be gaussian to use a gaussian model but we use a Gaussian distribution here. 
+
+hi ~ N(µ,σ)
+
+the i represents each individual element of the height vector, the rows of the data. The model so far just knows each height is defined by the same normal distribution with mean µ and sigma σ. The model assumes h is IID independently and identically distributed. 
+Rethinking:  
+Each height is assumed to be uncorrelated with the other heights, knowing one height tells you nothing about the other heights etc. *The i.i.d. assumption is about how the golem represents its uncertainty. It is an epistemological assumption. It is not a physical assumption about the world, an ontological one, unless you insist that it is. E. T. Jaynes (1922–1998) called this the mind projection fallacy, the mistake of confusing epistemological claims with ontological claims.* ... in ignorance of such correlations the most conservative distribution to use is i.i.d. IID is a 'small world' problem it concerns how the model represents uncertainty. 
+See related: 
+[ET Jaynes](https://en.wikipedia.org/wiki/Edwin_Thompson_Jaynes)  
+[mind projection fallacy](https://en.wikipedia.org/wiki/Mind_projection_fallacy)  
+
+Model of height: 
+hi ∼ Normal( µ , σ) [likelihood]
+µ ∼ Normal(178, 20) [ µ prior] 
+σ ∼ Uniform(0, 50) [ σ prior]
+
+Priors are usually specified independently for each parameter, which amounts to assuming Pr( µ , σ) = Pr( µ ) Pr(σ)
+
+prior for height - the average height (not an individual height) is somewhere between 150 adn 220. 
+```{r}
+# prior for mu  -the average height is somewhere between 150 adn 220.
+curve(dnorm(x, 178, 20), from=100, to=250, main = " prior for µ " )
+
+# prior for standard deviation flat prior - we only constrain it to have a positive value between 0 and 50
+curve(dunif(x, 0, 50), from=-10, to=60 , main = "sd")
+```
+
+
+### What do the priors imply about the possible distribution of individual heights ? Prior predictive simulation 
+Priors for h mu and sigma imply a joint prior distribution for individual heights that can be samples from. 
+
+```{r}
+# sample from the prior for individual heights 
+sample_mu = rnorm(n = 1e4, mean = 128, sd = 20)
+#sample from a uniform distribution with runif random-uniform
+sample_sigma = runif(n = 1e4,min = 0, max = 50)
+
+# define a prior distribution for h 
+prior_h = rnorm(n = 1e4, mean = sample_mu, sd = sample_sigma)
+
+dens(prior_h, show.HPDI = 0.50,
+     main = "prior predictive simulation \n relative plausibilities of different heights before seeing data ")
+```
+
+
