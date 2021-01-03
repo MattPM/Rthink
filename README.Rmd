@@ -15,16 +15,18 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-This repository contains my own personal notes, code, and code to work through examples and problem sets for the textbook [Statistical Rethinking - *A Bayesian Course with Examples in R and Stan*](https://xcelab.net/rm/statistical-rethinking/)" by Richard Mcelreath. This repository is not endorsed by anyone affiliated with the textbook they are simply notes. 
+
+This repository contains my own personal notes, code, and code to work through examples and problem sets for the textbook [Statistical Rethinking - *A Bayesian Course with Examples in R and Stan*](https://xcelab.net/rm/statistical-rethinking/)" by Richard Mcelreath.  This repository is not endorsed by anyone affiliated with the textbook they are simply notes. 
 
 ### Book Resources: 
-https://xcelab.net/rm/statistical-rethinking/
-https://vincentarelbundock.github.io/rethinking2/
+[lectures](https://www.youtube.com/watch?v=4WVelCswXo4&list=PLDcUM9US4XdNM4Edgs7weiyIguLSToZRI)  
+[course website](https://xcelab.net/rm/statistical-rethinking/)  
+[stan translation](https://vincentarelbundock.github.io/rethinking2/)  
+[brms translation](https://bookdown.org/content/4857/)  
+[R-INLA translation](https://akawiecki.github.io/statistical_rethinking_inla/)  
+[julia translation](https://github.com/StatisticalRethinkingJulia)  
 
-
-
-
-```{r,echo=FALSE}
+```{r,echo=FALSE, fig.width=3.5, fig.height = 3.5}
 set.seed(1)
 suppressMessages(library(rethinking))
 n_samples = 1000 
@@ -42,7 +44,14 @@ for ( i in 2:n_samples ) {
   p[i] <- ifelse( runif(1) < q1/q0 , p_new , p[i-1] )
 }
 
-dens( p , xlim=c(0,1), , main = "Small World Globe Toss")
+dens( p , xlim=c(0,1),  main = "Small World Globe Toss MCMC")
 curve( dbeta( x , W+1 , L+1 ) , lty=2 , add=TRUE )
 ```
+
+## Rethinking Package functions  
+```{r}
+lsf.str("package:rethinking") 
+```
+
+
 
