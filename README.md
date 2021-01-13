@@ -7,13 +7,13 @@
 
 <!-- badges: end -->
 
-This repository contains my own personal notes, code, and code to work
-through examples and problem sets for the textbook [Statistical
-Rethinking - *A Bayesian Course with Examples in R and
+This repository contains my notes, code, examples and problem set
+solutions for the textbook [Statistical Rethinking - *A Bayesian Course
+with Examples in R and
 Stan*](https://xcelab.net/rm/statistical-rethinking/)" by Richard
-Mcelreath. This repository is not endorsed by anyone affiliated with the
-textbook they are simply
-notes.
+Mcelreath. This repository and its contents are not endorsed by anyone
+affiliated with the textbook they are simply personal notes for my own
+education.
 
 ### Book Resources:
 
@@ -23,7 +23,14 @@ notes.
 [brms translation](https://bookdown.org/content/4857/)  
 [R-INLA
 translation](https://akawiecki.github.io/statistical_rethinking_inla/)  
-[julia translation](https://github.com/StatisticalRethinkingJulia)
+[julia
+translation](https://github.com/StatisticalRethinkingJulia)
+
+### Notes code and problem sets
+
+[**Chapter 2**](https://github.com/MattPM/Rthink/blob/master/Chapter%202.%20Small%20Worlds%20and%20Large%20Worlds/ch2.md)  
+[**Chapter 3**](https://github.com/MattPM/Rthink/blob/master/Chapter%203.%20Sampling%20the%20Imaginary/ch3.md)  
+[**Chapter 4**](https://github.com/MattPM/Rthink/blob/master/Chapter%204.%20Geocentric%20Models/Ch4.md)
 
 ![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
