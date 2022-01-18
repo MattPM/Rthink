@@ -47,23 +47,33 @@ distribution.
 
 ``` r
 # To simulate this, we generate for each person a list of 16 random numbers between −1 and 1.
+runif(n = 16, min = -1, max = 1)
+```
+
+    ##  [1]  0.03177819 -0.97236974 -0.50600502  0.93935782 -0.36289930
+    ##  [6] -0.80824030 -0.41889646 -0.93195651  0.82088338  0.12882153
+    ## [11] -0.71175503  0.69200586  0.70176222 -0.91795337  0.69111102
+    ## [16]  0.20843947
+
+``` r
 # These are the individual steps. Then we add these steps together to get the position after 16 steps.
-pos  = replicate( 1000 , sum( runif(16,-1,1) ) )
+# plot positions after doingthis procedure 1000 times 
+pos  = replicate(n = 1000 , expr = sum(runif(n = 16, min = -1, max = 1)))
 plot(density(pos))
 ```
 
 ![](Ch4_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ``` r
-# 25 random numbers between -1 and 1 
-runif(n = 25 ,min = -1, max = 1)
+# 25 random numbers between -10 and 10 
+runif(n = 25 ,min = -10, max = 10)
 ```
 
-    ##  [1]  0.4706457  0.4214836 -0.5855531 -0.5313800  0.1934555 -0.8771128
-    ##  [7] -0.2970984 -0.9171123  0.6955883  0.8554203 -0.4895548  0.7821428
-    ## [13]  0.8839796 -0.6156232 -0.2786821  0.9136512  0.6333635 -0.4546795
-    ## [19] -0.1559104 -0.5109915  0.9087961 -0.6750848 -0.1086524  0.8860693
-    ## [25] -0.8544937
+    ##  [1]  0.6010515 -6.3597820 -1.4470705 -4.6734559  9.2626884 -7.0183270
+    ##  [7] -4.2027882 -2.8148788  9.7984146  6.1074327 -1.6397132 -6.0504678
+    ## [13]  6.8325048 -0.4710959  5.3207918 -1.8735340 -2.0124293 -0.4840565
+    ## [19] -2.3146066 -1.4803993  9.7872664 -5.1053322  2.4531217 -3.5275748
+    ## [25] -5.8887588
 
 ``` r
 # sum of 25 numbers betweeen -1 and 1
@@ -85,20 +95,28 @@ Multiplication (which is addition)
 Logarithms of products (which is addition)
 
 Bell curves tell you almost nothing about the generative process, all
-that is preserved is the two moments mu and sigma.
+that is preserved is the two moments mu and sigma. See ch 7 for maximum
+entropy argument.
 
 ## Convergence on a Gaussian via Multiplication of small effect sizes
 
 assume growth rate is positively influenced by 12 alleles that increase
-growth by a percentage. That meand their effects are
-multiplicative.
+growth by a percentage. That means their effects are multiplicative.
+
+``` r
+# 12 random alleles with small effect size 
+runif(n = 12,min = 0, max = 0.1)
+```
+
+    ##  [1] 0.01088807 0.02882970 0.05791419 0.01548083 0.03755309 0.06296206
+    ##  [7] 0.05979336 0.05900954 0.05025683 0.06937136 0.02377177 0.03508414
 
 ``` r
 # simulate the product of 12 random alleles with multiplicative increase on growth of 0-10%.
 prod(1 + runif(n = 12,min = 0, max = 0.1))
 ```
 
-    ## [1] 1.645966
+    ## [1] 1.989233
 
 ^ This is a growth rate.
 
@@ -115,20 +133,29 @@ size of each locus is small. *Small effects multiplied together are
 approximately additive *
 
 If we assume the effect sizes can be high as 80%, we don’t get a
-Gaussian
-distribution.
+Gaussian distribution.
 
 ``` r
-dens(replicate(n = 1000, expr = prod(1 + runif(n = 12,min = 0, max = 0.8)) ))
+# 12 random alleles with between 0 and 80% effect size 
+# simulate effect sizes with runif 
+runif(n = 12,min = 0, max = 0.8)
+```
+
+    ##  [1] 0.49339223 0.32336330 0.63573741 0.33448951 0.50586215 0.39726826
+    ##  [7] 0.37624567 0.01955251 0.64895455 0.12846027 0.57860367 0.33236592
+
+``` r
+dens(replicate(n = 1000, expr = prod(1 + runif(n = 12,min = 0, max = 0.8) ) ))
 ```
 
 ![](Ch4_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ### Large deviations multiplied together *on a log scale* converge to Gaussian
 
-Adding logs is the same as multiplying the original numbers,
-multiplicative interactions of large deviations can produce Gaussian
-distributions if we measure the outcome on a log
+However, if we add up the log of the distributions, adding logs is the
+same as multiplying the original numbers, multiplicative interactions of
+large deviations can produce Gaussian distributions if we measure the
+outcome on a log
 scale.
 
 ``` r
@@ -141,9 +168,10 @@ dens(replicate(n = 1000, expr = log10( prod(1 + runif(n = 12,min = 0, max = 0.8)
 
 #### Ontological
 
-(meaning there is a priori evidence not requiring reason) - the world is
-full of Gaussian distributions (why? this is due to principles of
-maximum entropy discussed in ch7 and blow) \#\#\#\# Epistomological  
+An ontological reason means there is a priori evidence not requiring
+reason - the world is full of Gaussian distributions (why? this is due
+to principles of maximum entropy discussed in ch7)  
+\#\#\#\# Epistomological  
 When all we are willing to say of a measure is the mean and variance,
 the Gaussian is the most consistent with our assumptions: it can be
 realized the largest number of ways.
@@ -172,8 +200,8 @@ The symbol “~” means there is a stochastic relationship. A stochastic
 relationship is the mapping of a variable or parameter onto a
 distribution. It is stochastic because no single instance of the
 variable is known with certainty. The mapping is instead probabilistic.
-Some values are more probabilistic than others mut many different values
-are plausible under any model.
+Some values are more probable than others but many different values are
+plausible under any model.
 
 the model definition to define the posterior distribution using Bayes
 theorm:
@@ -186,11 +214,11 @@ n, p)Uniform(p | 0, 1)dp
 
 ## Bayesian model of height - Howell data
 
-Constructing a Bayesian machine that considers possible distributions of
-mu and sigma and ranks them by posterior plausibility - the logical
-compatibility of the distribution with the data and the model. The model
-estimates a entire posterior distributionof gaussian distributions - a
-distribution of distributions.
+Here we construct a Bayesian machine that considers possible
+distributions of mu and sigma and ranks them by posterior plausibility -
+the logical compatibility of the distribution with the data and the
+model. The model estimates a entire posterior distribution of gaussian
+distributions - a distribution of distributions.
 
 ``` r
 data("Howell1")
@@ -211,46 +239,17 @@ precis(d)
 d2 = d %>% filter( age > 18)
 ```
 
-A naive non bayesian model of height from the data (not part of book)
-
-``` r
-scd = d %>% scale %>% as.data.frame
-f1 = height ~ 0 +  age + male + weight
-m1 = lm(formula = f1, data = scd)  
-summary(m1)
-```
-
-    ## 
-    ## Call:
-    ## lm(formula = f1, data = scd)
-    ## 
-    ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -1.05102 -0.19597  0.02645  0.23514  0.71499 
-    ## 
-    ## Coefficients:
-    ##        Estimate Std. Error t value Pr(>|t|)    
-    ## age    0.084538   0.019683   4.295 2.07e-05 ***
-    ## male   0.001436   0.014640   0.098    0.922    
-    ## weight 0.883254   0.019924  44.330  < 2e-16 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Residual standard error: 0.3338 on 541 degrees of freedom
-    ## Multiple R-squared:  0.889,  Adjusted R-squared:  0.8884 
-    ## F-statistic:  1444 on 3 and 541 DF,  p-value: < 2.2e-16
-
 ### the Bayesian model
 
-First the emperical distribution needn’t be gaussian to use a gaussian
-model but we use a Gaussian distribution here.
+Here we are just making a model of height without other predictor
+variables.
 
 hi ~ N(µ,σ)
 
-the i represents each individual element of the height vector, the rows
+The i represents each individual element of the height vector, the rows
 of the data. The model so far just knows each height is defined by the
 same normal distribution with mean µ and sigma σ. The model assumes h is
-IID independently and identically distributed. Rethinking:  
+IID independently and identically distributed. Rethinking section:  
 Each height is assumed to be uncorrelated with the other heights,
 knowing one height tells you nothing about the other heights etc. *The
 i.i.d. assumption is about how the Golem represents its uncertainty. It
@@ -260,33 +259,33 @@ Jaynes (1922–1998) called this the mind projection fallacy, the mistake
 of confusing epistemological claims with ontological claims.* … in
 ignorance of such correlations the most conservative distribution to use
 is i.i.d. IID is a ‘small world’ problem it concerns how the model
-represents uncertainty. See related: [ET
-Jaynes](https://en.wikipedia.org/wiki/Edwin_Thompson_Jaynes)  
+represents uncertainty. See related:
+[Jaynes](https://en.wikipedia.org/wiki/Edwin_Thompson_Jaynes)  
 [mind projection
 fallacy](https://en.wikipedia.org/wiki/Mind_projection_fallacy)
 
 Model of height: hi ∼ Normal( µ , σ) \[likelihood\] µ ∼ Normal(178, 20)
 \[ µ prior\] σ ∼ Uniform(0, 50) \[ σ prior\]
 
-Priors are usually specified independently for each parameter, which
-amounts to assuming Pr( µ , σ) = Pr( µ ) Pr(σ)
+Priors are specified independently for each parameter. This assumes: Pr(
+µ , σ) = Pr( µ ) Pr(σ)
 
 prior for height - the average height (not an individual height) is
-somewhere between 150 adn 220.
+somewhere between 150 and 220.
 
 ``` r
-# prior for mu  -the average height is somewhere between 150 adn 220.
-curve(dnorm(x, 178, 20), from=100, to=250, main = " prior for µ " )
-```
+par(mfrow = c(1, 2))
 
-![](Ch4_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+# prior for mu-the average height is somewhere between 150 adn 220.
+curve(dnorm(x, 178, 20), from=100, to=250, main = " prior for µ ")
 
-``` r
-# prior for standard deviation flat prior - even though flat, we constrain it to have a positive value between 0 and 50
+# prior for standard deviation flat prior 
+# We constrain it to have a positive value between 0 and 50
+# sd can only be positive. 
 curve(dunif(x, 0, 50), from=-10, to=60 , main = "sd")
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ### What do the priors imply about the possible distribution of individual heights ? Prior predictive simulation
 
@@ -298,7 +297,7 @@ individual heights that can be samples from.
 sample_mu = rnorm(n = 1e4, mean = 128, sd = 20)
 
 #sample from a uniform distribution with runif random-uniform
-sample_sigma = runif(n = 1e4,min = 0, max = 50)
+sample_sigma = runif(n = 1e4, min = 0, max = 50)
 
 # define a prior distribution for h 
 prior_h = rnorm(n = 1e4, mean = sample_mu, sd = sample_sigma)
@@ -307,20 +306,17 @@ dens(prior_h, show.HPDI = 0.50,
      main = "prior predictive simulation \n relative plausibilities of different heights before seeing data ")
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-If we had used an expanded large value for the standard deviation in the
-sample\_mu prior, the model would accept impossibly large heights as
-plausible. We can therefore use domain knowledge to specify the prior.
 **400 cm is 13 feet - the model accepts a 13 foot human is plausible**
 the prior predictive simulation is the relative plausibilities given the
 model before seeing the data, we can do better than accepting
 Hagrid-sized humans. Also this model accepts people with *negative
 height*
 
-The important thing is we base the priors on knowledge of the data
-before we see it, scientific knowledge, not the data itself. Using data
-itself is an ‘emperical bayes’
+We need to base the priors on *scientific knowledge* of the data before
+we see it, *not the data itself*. Using data itself is an ‘emperical
+bayes’
 procedure.
 
 ``` r
@@ -332,11 +328,11 @@ dens(prior_h, show.HPDI = 0.50,
      main = " prior predictive simulation \n poorly specified prior - model accepts implausible values")
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ## calculating the posterior with brute force grid approximation
 
-you’d never do this but this is to illustrate what we are approximating
+You’d never do this but this is to illustrate what we are approximating
 with the quadratic approximation which is similar to EM algorithms,
 e.g. thosed used in mclust to fit gaussian mixtures.
 
@@ -347,9 +343,10 @@ Everything must be done on the log scale. Doing this with the tidy
 translation with ‘map2’ to keep the command in line with the pipe. I
 would have used apply. Here, like in chapter 1-3 where the dbinom was
 used to calculate the likelihood, here we use dnrom to calculate the
-likelihood, for each row, we map the likelihood function which
-calculates the relative number of ways that particular combination of mu
-and sigma could have produced the data d2$height.
+likelihood.  
+For each row, we map the likelihood function which calculates the
+relative number of ways that particular combination of mu and sigma
+could have produced the data d2$height.
 
 ``` r
 #constrict the grid. 
@@ -369,13 +366,13 @@ glimpse(d_grid)
 # define a function to map that calculates the log likelihood at each combination of mu and sigma. 
 grid_function = function(mu, sigma) {
   # calculate the likelihood with dnorm
-  dnorm(d2$height, mean = mu, sd = sigma, log = T) %>% sum()
+  dnorm(x = d2$height, mean = mu, sd = sigma, log = T) %>% sum()
 }
 
 d_grid_lk = 
   d_grid %>% 
   # map the likelihood function across each row combination of mu and sigma 
-  mutate(log_likelihood = purrr::map2(mu, sigma, grid_function)) %>% 
+  mutate(log_likelihood = purrr::map2(.x = mu, .y = sigma, .f = grid_function)) %>% 
   unnest(log_likelihood) %>% 
   # specify the prior
   mutate(prior_mu    = dnorm(mu,    mean = 178, sd  = 20, log = T),
@@ -384,8 +381,22 @@ d_grid_lk =
   mutate(product = log_likelihood + prior_mu + prior_sigma) %>% 
   # standardize the probability 
   mutate(probability = exp(product - max(product)))
-  
 
+
+d_grid_lk %>% head 
+```
+
+    ## # A tibble: 6 x 7
+    ##      mu sigma log_likelihood prior_mu prior_sigma product probability
+    ##   <dbl> <dbl>          <dbl>    <dbl>       <dbl>   <dbl>       <dbl>
+    ## 1   140  4            -3768.    -5.72       -3.91  -3778.           0
+    ## 2   140  4.05         -3699.    -5.72       -3.91  -3708.           0
+    ## 3   140  4.10         -3632.    -5.72       -3.91  -3642.           0
+    ## 4   140  4.15         -3568.    -5.72       -3.91  -3578.           0
+    ## 5   140  4.20         -3506.    -5.72       -3.91  -3516.           0
+    ## 6   140  4.25         -3447.    -5.72       -3.91  -3456.           0
+
+``` r
 ggplot(d_grid_lk, aes(x = mu, y = probability)) + geom_point()
 ```
 
@@ -394,7 +405,8 @@ ggplot(d_grid_lk, aes(x = mu, y = probability)) + geom_point()
 ``` r
 d_grid_lk %>% 
   ggplot(aes(x = mu, y = sigma, fill = probability)) + 
-  geom_raster() + scale_fill_viridis_c() + 
+  geom_raster() + 
+  scale_fill_viridis_c() + 
   labs(x = expression(mu), y = expression(sigma)) +
   coord_cartesian(xlim = range(d_grid$mu),
                   ylim = range(d_grid$sigma)) +
@@ -417,7 +429,9 @@ d_grid_samples <-
   d_grid_lk %>% 
   sample_n(size = 1e4, replace = T, weight = probability)
 
-ggplot(d_grid_samples, aes(x = mu, y = sigma)) + geom_bin2d(bins = 50) + scale_fill_viridis_c()
+ggplot(d_grid_samples, aes(x = mu, y = sigma)) +
+  geom_bin2d() + 
+  scale_fill_viridis_c()
 ```
 
 ![](Ch4_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
@@ -427,7 +441,6 @@ density of mu (marginal meaning averaged over sigma)
 
 ``` r
 dens(d_grid_samples$mu)
-
 HPDI(d_grid_samples$mu, prob = 0.94)
 ```
 
@@ -465,24 +478,25 @@ hi ∼ Normal( µ , σ) -\> height ~ dnorm(mu,sigma)
 
 ``` r
 # specify model formula 
-flist <- alist(height ~ dnorm( mu , sigma ),
-               mu ~ dnorm( 178 , 20 ),
-               sigma ~ dunif( 0 , 50 )
-               )
+flist <- alist(
+  height ~ dnorm(mu, sigma),
+  mu ~ dnorm(178 ,20),
+  sigma ~ dunif(0, 50)
+  )
 
 # fit the model with QUAP 
 m4.1 <- quap( flist , data=d2 )
 precis(m4.1)
 ```
 
-    ##             mean        sd       5.5%     94.5%
-    ## mu    154.654756 0.4172287 153.987944 155.32157
-    ## sigma   7.762577 0.2951035   7.290945   8.23421
+    ##             mean        sd       5.5%      94.5%
+    ## mu    154.654533 0.4172153 153.987742 155.321323
+    ## sigma   7.762329 0.2950800   7.290735   8.233924
 
 **What the output of Precis means here: ** this is the marginal
-distribution for both parameters mu and sigma, so the marginal posterior
-distribution for mu, after averaving over values of sigma is given by a
-normal distribution with mean 154 and sigma 0.4.
+posterior distribution for both parameters mu and sigma. E.g. *posterior
+for mu, after averaging over values of sigma* is given by a normal
+distribution with mean 154 and sigma 0.4.
 
 The quadratic approximation of a posterior distribution with more than
 one parameter is just a multi-dimensional gaussian distribution. Just
@@ -498,49 +512,41 @@ vcov(m4.1)
 ```
 
     ##                 mu        sigma
-    ## mu    0.1740797568 0.0002329569
-    ## sigma 0.0002329569 0.0870860999
+    ## mu    0.1740686221 0.0002279195
+    ## sigma 0.0002279195 0.0870721967
 
 ``` r
 cov2cor(vcov(m4.1))
 ```
 
-    ##                mu       sigma
-    ## mu    1.000000000 0.001892026
-    ## sigma 0.001892026 1.000000000
+    ##               mu      sigma
+    ## mu    1.00000000 0.00185132
+    ## sigma 0.00185132 1.00000000
 
 the diagonal in vcov gives the variances. Taking the squrare root of
 these gives the standard deviation from precis
 
 ``` r
-prec = precis(m4.1)
-diag(vcov(m4.1))
+sqrt(diag(vcov(m4.1)))
 ```
 
     ##        mu     sigma 
-    ## 0.1740798 0.0870861
-
-``` r
-pre = precis(m4.1)
-pre$sd^2
-```
-
-    ## [1] 0.1740798 0.0870861
+    ## 0.4172153 0.2950800
 
 We can extract samples from the posterior distribution:
 
 ``` r
-post = rethinking::extract.samples(object = m4.1 ,n = 1e4)
+post = rethinking::extract.samples(object = m4.1, n = 1e4)
 head(post)
 ```
 
     ##         mu    sigma
-    ## 1 154.2947 8.273673
-    ## 2 155.2037 7.710891
-    ## 3 154.7352 7.527917
-    ## 4 154.6629 7.434877
-    ## 5 154.4365 7.591567
-    ## 6 154.6053 7.408219
+    ## 1 155.3997 7.391357
+    ## 2 153.9905 8.050820
+    ## 3 154.4077 7.864748
+    ## 4 154.3963 7.588218
+    ## 5 154.3019 7.743850
+    ## 6 154.5917 8.233508
 
 Under the hood, this uses MASS which has a function mvnorm to simulate
 random vectors of multivariate gaussians. We feed a vector of mu values,
@@ -550,17 +556,21 @@ conditioned on the prior and data, and the mean of the posterior
 distribution of values for sigma conditioned on the prior and data.
 
 ``` r
-post2 = MASS::mvrnorm(n = 1e4, mu = coef(m4.1), Sigma = vcov(m4.1))
+post2 = MASS::mvrnorm(n = 1e4, 
+                      # here we are actually giving both mu and sigma 
+                      mu = coef(m4.1), 
+                      # here we input a variance covariance matrix 
+                      Sigma = vcov(m4.1))
 head(post2)
 ```
 
     ##            mu    sigma
-    ## [1,] 154.6467 7.193035
-    ## [2,] 155.3036 8.234401
-    ## [3,] 154.2685 7.977411
-    ## [4,] 154.3474 7.959547
-    ## [5,] 154.8376 7.646673
-    ## [6,] 155.1038 7.493139
+    ## [1,] 155.2991 7.788996
+    ## [2,] 154.9844 7.983310
+    ## [3,] 154.8203 7.401683
+    ## [4,] 154.5172 7.736499
+    ## [5,] 154.1527 8.007468
+    ## [6,] 154.5873 8.135875
 
 ### Equivalent model fitted with brms
 
@@ -585,48 +595,59 @@ b4.1 =  brms::brm(data = d2,
 
 ## 4.4 Linear Prediction (p95 in hard copy )
 
+All of the models above were just estimating the mean height. Now we are
+adding predictor variables.
+
 “regression” to the mean - Galton - to predict son’s heights from
 fathers, better to use the whole population of heights in prediction.
 Arises statistically whenever individual measurements are assigned a
 common distribution–leads to shrinkage as each measurement informs the
-others. “shrink towards the overall mean”.
+others. “shrink towards the overall
+mean”.
 
 ``` r
-ggplot(d2, aes(x = weight, y = height)) + geom_point()
+with(data = d2, expr = plot(height, weight, col = col.alpha('black',alpha =  0.5)))
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
-The linear model strategy instructs the golem to assume that the
-predictor variable has a constant and additive relationship to the mean
-of the outcome. The golem then computes the posterior distribution of
-this constant relationship. Some model parameters now stand for the
-strength of association between the outcome **µ** and the value of
-another parameter. The posterior in a bayesian linear model is lines
-ranked by their plausibility. We constrain the model to be lines and the
-model tells us it really likes this series of lines.
+The linear model strategy: make the parameter µ, the mean of gaussian
+into a linear function of predictor variables. We instruct the golem to
+assume that the predictor variable has a constant and additive
+relationship to the mean of the outcome. The golem then computes the
+posterior distribution of this constant relationship.
 
-h i ∼ Normal( µ i , σ) \[likelihood\] *the little i on µ i indicates
-that the mean depends upon the row* we are making a modl of the mean and
-the mean now depends on a predictor.  
-µ i = α + β (x i − ¯x) \[linear model\] *note the = sign not ~ ; mu at i
-is deterministic not stochastic. Once we know the other parameters we
-know the mu predicted at i exactly * The mean µ is no longer a parameter
-to be estimated. Rather, as seen in the second line of the model, µ i is
-constructed from other parameters  
-α ∼ Normal(178, 20) \[ α prior\]  
-β ∼ Normal(0, 10) \[ β prior\]  
-σ ∼ Uniform(0, 50) \[ σ prior\]
+Some model parameters now stand for the strength of association between
+the outcome **µ** and the value of another parameter.
 
-The parameters α and β are “made up” α and β are not for describing the
+The posterior in a bayesian linear model is lines ranked by their
+plausibility. We constrain the model to be lines and the model tells us
+it really likes this series of lines.
+
+h\[i\] ∼ Normal(µi , σ) \[likelihood\]  
+*the little i on µi indicates that the mean now depends upon the row in
+contrast to the simple model of height without the linear model* we are
+making a model of the mean and the mean now depends on a predictor. We
+are asking what are plausible values for h at some other values of the
+predictors for each observation.
+
+µi = α + β(xi − ¯x) \[linear model\]  
+*the = sign not ~ ; mu at i is deterministic not stochastic. Once we
+know the other parameters we know the mu predicted at i exactly*
+
+The mean µ is no longer a parameter to be estimated. µi is constructed
+from other parameters:  
+α ∼ Normal(178, 20) \[ α prior\] (intercept prior)  
+β ∼ Normal(0, 10) \[ β prior\] (beta prior)  
+σ ∼ Uniform(0, 50) \[ σ prior\] (sd prior)
+
+The parameters α and β are “made up”. α and β are not for describing the
 Gaussian, their purpose is manipulating µ, *allowing it to vary
 systematically across cases in the data.*
 
 Each parameter is something that must be described in the posterior
 distribution–when you want to know something about the data, you ask
 your golem by inventing a parameter for it.
-
-µ i = α + β (x i − ¯x)
 
 We are asking what is the height when x = xbar – that is answered by the
 intercept bc when xi = xbar µi = α. And we are asking what happens to
@@ -644,28 +665,31 @@ plot(NULL,
       xlim = range(d2$weight), xlab = "weight",
       ylim = c(-100,400), ylab = "height"
      )
-abline(h = 0, lty = 2)
-abline(h = 272, lty = 1, lwd = 0.5)
+abline(h = 0, lty = 2) # flat line at height of 0
+abline(h = 272, lty = 1, lwd = 0.5) # flat line at tallest person ever 8ft 11 in
 mtext("b ~ dnorm(0,10)") 
 # define the mean weight from the model 'xbar' 
 xbar <- mean(d2$weight) 
-for(i in 1:N)
-curve( a[i] + b[i]*(x - xbar),
-       from=min(d2$weight), 
-       to=max(d2$weight),
-       add=TRUE,
-       col=col.alpha("black",0.2) 
-       )
+for(i in 1:N) { 
+curve(expr =  a[i] + b[i]*(x - xbar),
+      from = min(d2$weight), 
+      to = max(d2$weight),
+      add = TRUE,
+      col = col.alpha("black",0.2) 
+      )
+}
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 This is a bad model – we expect htis bowtie shape because the
 predictions should be tighter around the mean but the large prior on
-beta give ridiculous expected values.
+beta give ridiculous expected values-smaller than 0 and larger than the
+tallest human ever.
 
-We instead assume the logarithm of beta has a normal distribution – this
-enforces a positive relationship. If the logarithm of β is normal, it
+We use domain knowledge to instead assume the logarithm of beta has a
+normal distribution – this enforces a positive relationship assuming as
+belple get larger they get taller. If the logarithm of β is normal, it
 forces beta to be positive because exp(x) is greater than zero for any
 real number.
 
@@ -676,7 +700,9 @@ b <- rlnorm(1e4, 0, 1)
 dens(b, xlim = c(0,5), adj=0.1)
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+
+Prior simulation
 
 ``` r
 set.seed(2971)
@@ -693,35 +719,36 @@ plot(NULL,
 
 for ( i in 1:N )
   curve( 
-    a[i] + b[i]*(x - xbar) ,
-    from=min(d2$weight),
-    to=max(d2$weight), 
-    add= TRUE, ylim = c(-100, 400), 
-    col=col.alpha("black",0.2)
+    expr = a[i] + b[i]*(x - xbar) ,
+    from = min(d2$weight),
+    to = max(d2$weight), 
+    add = TRUE, ylim = c(-100, 400), 
+    col = col.alpha("black",0.2)
     )
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 ### Running the model with quap and sampling from the posterior
 
 ``` r
 # fit model 
-m4.3 <- quap( 
-  alist( 
-  height ~ dnorm( mu , sigma ), # likelihood 
-  mu <- a + b*( weight - xbar ), # deterministic component 
-  a ~ dnorm( 178 , 20 ), # prior for the intercept the expected height for a person with exactly average weight
-  b ~ dlnorm( 0 , 1 ), # prior for beta (the rate of change)
-  sigma ~ dunif( 0 , 50 )),  # prior for sigma
-  data=d2 ) 
-
+m4.3 <- quap(
+   flist = alist(
+     height ~ dnorm(mu , sigma), # likelihood 
+     mu <- a + b*(weight - xbar), # deterministic component 
+     a ~ dnorm(178 , 20), # prior for the intercept the expected height for a person with exactly average weight
+     b ~ dlnorm(0 , 1), # prior for beta (the rate of change)
+     sigma ~ dunif(0 , 50) # prior for sigma
+     ),  
+   data = d2 
+   ) 
 
 sx = extract.samples(object = m4.3, n = 1000)
 plot(sx)
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 precis(m4.3)
@@ -740,7 +767,7 @@ d2 <- d2 %>% mutate(weight_c = weight - mean(weight))
 b4.3b <- 
   brm(data = d2, 
       family = gaussian,
-      bf(height ~ a + exp(lb) * weight_c,
+      bf(height ~ a + exp(lb) * weight_c, 
          a ~ 1,
          lb ~ 1,
          nl = TRUE),
@@ -761,18 +788,22 @@ and height is linear, because the model only considered lines. It just
 says that, if you are committed to a line, then lines with a slope
 around 0.9 are plausible ones.**
 
+plot samples from the posterior
+
 ``` r
 plot(NULL, 
       xlim = range(d2$weight), xlab = "weight",
       ylim = c(140,200), ylab = "height"
      )
-for ( i in 1:nrow(sx) )
-curve( sx$a[i] + sx$b[i]*(x-mean(d$weight)) , col=col.alpha("black",0.3) , add=TRUE,
-       ylim = c(110,130) 
+for (i in 1:nrow(sx)) { 
+  curve(expr = sx$a[i] + sx$b[i]*(x-mean(d$weight)), 
+        col=col.alpha("black",alpha = 0.1) , add=TRUE,
+        ylim = c(110,130) 
        )
+} 
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 Bowtie shape is because the prediction is better around the mean and
 improves with sample size.
@@ -782,12 +813,12 @@ There are infinite number of possible values of the expected mean
 on drawing 10,000 samples form the posterior.
 
 ``` r
-post <- extract.samples( m4.3 ) 
+post <- extract.samples(m4.3) 
 mu_at_50 <- post$a + post$b * ( 50 - xbar )
 dens( mu_at_50 , col=rangi2 , lwd=2 , xlab="mu|weight=50" )
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ``` r
 PI( mu_at_50 , prob=0.89 )
@@ -801,12 +832,13 @@ average height between about 159 cm and 160 cm (conditional on the model
 and data), assuming the weight is 50
 kg.*
 
-### Getting predictions and intervals from the posterior of a fit of a model
+### Getting predictions and intervals from the posterior of a fit of a model - link function
 
 The function link provides a posterior distribution of µ for each case
 we feed it.  
 in this case we generate posteriors for µ: the expected average height
-for values of weight.  
+for values of weight.
+
 3 steps:  
 1\. link() - generate distributions of posterior values for a parameter
 of interest.  
@@ -817,19 +849,18 @@ parameter of interest for each value of predictor
 ``` r
 # define sequence of weights to compute predictions for
 # these values will be on the horizontal axis
-weight.seq <- seq( from=25 , to=70 , by=1 )
+weight.seq <- seq(from=25 , to=70, by=1)
 
 # use link to compute mu for each sample from posterior 
 # and for each weight in weight.seq 
-mu <- link( m4.3 , data=data.frame(weight=weight.seq) ) 
-mu[1:4,1:4]
+mu <- link(m4.3, data=data.frame(weight=weight.seq)) 
+
+dim(mu); length(weight.seq)
 ```
 
-    ##          [,1]     [,2]     [,3]     [,4]
-    ## [1,] 137.2281 138.0833 138.9385 139.7937
-    ## [2,] 137.0969 137.9814 138.8660 139.7505
-    ## [3,] 136.1847 137.1067 138.0287 138.9507
-    ## [4,] 136.8391 137.7084 138.5776 139.4468
+    ## [1] 1000   46
+
+    ## [1] 46
 
 ``` r
 # I find it easier to see what is going on by adding colnames
@@ -837,14 +868,31 @@ mu[1:4,1:4]
 # the variables are values of weight, the values are Gaussians 
 # the point is to show that the uncertainty depends on the values of mu. 
 colnames(mu) = weight.seq
-mu[1:4,1:4]
+mu[1:10,1:10]
 ```
 
-    ##            25       26       27       28
-    ## [1,] 137.2281 138.0833 138.9385 139.7937
-    ## [2,] 137.0969 137.9814 138.8660 139.7505
-    ## [3,] 136.1847 137.1067 138.0287 138.9507
-    ## [4,] 136.8391 137.7084 138.5776 139.4468
+    ##             25       26       27       28       29       30       31
+    ##  [1,] 137.2281 138.0833 138.9385 139.7937 140.6490 141.5042 142.3594
+    ##  [2,] 137.0969 137.9814 138.8660 139.7505 140.6351 141.5196 142.4042
+    ##  [3,] 136.1847 137.1067 138.0287 138.9507 139.8727 140.7947 141.7167
+    ##  [4,] 136.8391 137.7084 138.5776 139.4468 140.3161 141.1853 142.0545
+    ##  [5,] 135.6752 136.6121 137.5490 138.4858 139.4227 140.3595 141.2964
+    ##  [6,] 134.8281 135.7975 136.7669 137.7364 138.7058 139.6752 140.6447
+    ##  [7,] 136.6474 137.5551 138.4628 139.3705 140.2782 141.1859 142.0936
+    ##  [8,] 136.5438 137.4521 138.3604 139.2687 140.1770 141.0853 141.9936
+    ##  [9,] 135.9598 136.8752 137.7905 138.7059 139.6213 140.5366 141.4520
+    ## [10,] 138.5191 139.3351 140.1512 140.9672 141.7832 142.5992 143.4152
+    ##             32       33       34
+    ##  [1,] 143.2146 144.0699 144.9251
+    ##  [2,] 143.2888 144.1733 145.0579
+    ##  [3,] 142.6387 143.5607 144.4827
+    ##  [4,] 142.9238 143.7930 144.6622
+    ##  [5,] 142.2332 143.1701 144.1069
+    ##  [6,] 141.6141 142.5835 143.5530
+    ##  [7,] 143.0013 143.9090 144.8167
+    ##  [8,] 142.9019 143.8102 144.7185
+    ##  [9,] 142.3673 143.2827 144.1980
+    ## [10,] 144.2312 145.0472 145.8633
 
 The uncertainty at the ends is greater than at the mean. Makes perfect
 sense; when someone is exactly the average weight we can guess their
@@ -858,7 +906,7 @@ mu_long = as.data.frame(mu) %>%
 ggplot(mu_long, aes(x = weight, y = distribution)) + geom_violin() + theme_classic()
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 These are posterior probability distributions for expected values of the
 linear model of the **average** height µi at various values of weight.
@@ -868,22 +916,28 @@ for
 sigma.
 
 ``` r
-sim.height <- sim( m4.3 , data=list(weight=weight.seq))  %>% as.data.frame()
+sim.height <- sim(m4.3 , data=list(weight=weight.seq)) %>% as.data.frame()
 colnames(sim.height) = weight.seq
 
 # get 89% posterior Prediction Intervals according to the model 
 height.PI <- apply( sim.height , 2 , PI , prob=0.89 )
+# get 25% posterior Prediction Intervals according to the model 
 height.PI2 <- apply( sim.height , 2 , PI , prob=0.25 )
 
+## 
 # plot raw data 
-plot( height ~ weight , d2 , col=col.alpha(rangi2,0.5) )
-
+plot( height ~ weight , d2 , col=col.alpha(rangi2,0.5), 
+      main = 'points = actual data \n grey = model 89% posterior prediction intervals \n red = 25% posterior prediction intervals')
 # draw PI region for simulated heights 
-shade( height.PI , weight.seq )
-shade( height.PI2, weight.seq ,col = col.alpha("red", 0.3))
+shade(height.PI, weight.seq)
+shade(object = height.PI2, lim =  weight.seq, col = col.alpha("red", 0.3))
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+
+``` r
+## 
+```
 
 ### Basis Splines and polynomial regression.
 
@@ -934,7 +988,12 @@ ds = apply(d[ ,2:3], 2, scale) %>% as.data.frame()
 ds$year = d$year
 dt = ds %>% gather(var, value, doy:temp)
 p = ggplot(dt, aes(x = year, y = value, fill = var)) + geom_point(shape = 21)
+p
 ```
+
+    ## Warning: Removed 479 rows containing missing values (geom_point).
+
+![](Ch4_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 Get 15 evenly spaced dates across the data (again can use a package to
 do this in a more mptomized away)
@@ -963,11 +1022,15 @@ B <- bs(x = d2$year,
         degree=3,
         intercept=TRUE )
 
-plot( NULL , xlim=range(d2$year) , ylim=c(0,1) , xlab="year" , ylab="basis value" ) 
-for ( i in 1:ncol(B) ) lines( d2$year , B[,i] )
+plot(NULL, 
+     xlim=range(d2$year),  ylim=c(0,1) , 
+     xlab="year" , ylab="basis value") 
+for ( i in 1:ncol(B) ){  
+  lines( d2$year , B[,i] )
+}
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
 Now fit the model p 117. Di ∼ Normal(µi, σ) likelihood  
 µi = α + ∑ wkB(k,i) linear model  
@@ -1036,15 +1099,14 @@ Get the weighted basis functions
 post <- extract.samples(m4.7) 
 
 # plot the weighted basis functions 
-w <- apply( post$w , 2 , mean ) 
-plot( NULL , xlim=range(d2$year) , ylim=c(-2,2) ,
-xlab="year" , ylab="basis * weight" )
-for ( i in 1:ncol(B) ) lines( d2$year , w[i]*B[,i] )
-```
-
-![](Ch4_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
-
-``` r
+w <- apply(post$w, 2, mean) 
+par(mfrow = c(2,1))
+plot(NULL, 
+     xlim = range(d2$year), ylim = c(-2,2),
+     xlab = "year", ylab = "basis * weight")
+for ( i in 1:ncol(B) ) { 
+  lines(x = d2$year, y = w[i]*B[,i])
+}
 # plot 97% posterior interval for µ , at each year:
 mu <- link( m4.7 ) 
 mu_PI <- apply(mu,2,PI,0.97)
@@ -1052,14 +1114,14 @@ plot( d2$year , d2$temp , col=col.alpha(rangi2,0.3) , pch=16 )
 shade( mu_PI , d2$year , col=col.alpha("black",0.5) )
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-40-2.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
 
 Matrix algebra note: matrix multiplication of the basis matrix B by the
 vector of parameters w: B %\*% w. This notation is just linear algebra
 shorthand for (1) multiplying each element of the vector w by each value
 in the corresponding column of B and then (2) summing up each row of the
 result. So you end up with exactly what you need: A sum linear predictor
-for each year (row). Its the same math with little tricks t compress in
+for each year (row). Its the same math with little tricks to compress in
 a covenient
     format.
 
@@ -1110,11 +1172,38 @@ y i ∼ Normal( µ , σ)
 µ ∼ Normal(0, 10)  
 σ ∼ Exponential(1)
 
+A:  
+yi ∼ Normal(µ , σ)
+
 4E2. In the model definition just above, how many parameters are in the
 posterior distribution?
 
+A:  
+The posterior is made of 2 parameters, mu and sigma.
+
 4E3. Using the model definition above, write down the appropriate form
-of Bayes’ theorem that includes the proper likelihood and priors.
+of Bayes’ theorem that includes the proper likelihood and priors.  
+A:  
+Posterior = Plausibility of model after seeing data  
+The model is estimating 2 parameters mu sigma conditioned on values of y
+(times priors). So the posterior as above, is the joint posterior
+distribution for values of mu and sigma.  
+p(mu,sigma | Y )
+
+likelihood  
+The ways model can produce data  
+pr(Y | mu, sigma)  
+Normal(Y | mu, sigma)
+
+prior  
+the prior plausibility of the parameters.  
+mu = N(mu | 0, 10)  
+sigma = Exp(sigma | 0, 1)  
+joint prior = pr(mu) \* pr(sigma)
+
+joint probability posterior = likelihood \* prior  
+p(mu,sigma | Y ) = Normal(Y | mu, sigma) \* N(mu | 0, 10) \* Exp(sigma |
+0, 1) / average likelihood
 
 4E4. In the model definition below, which line is the linear model?
 
@@ -1124,8 +1213,12 @@ yi ∼ Normal( µ , σ)
 β ∼ Normal(0, 1)  
 σ ∼ Exponential(2)
 
+A: µi = α + β xi
+
 4E5. In the model definition just above, how many parameters are in the
 posterior distribution?
+
+A:3 each parameter that has a prior has a posterior.
 
 4M1. For the model definition below, simulate observed y values from the
 prior (not the posterior).
@@ -1134,19 +1227,43 @@ y i ∼ Normal( µ , σ)
 µ ∼ Normal(0, 10)  
 σ ∼ Exponential(1)
 
+``` r
+# y i ∼ Normal( µ , σ) 
+# rnorm(n = 100,mean = mu, sd = sigma) # define mu sigma with priors 
+mu = rnorm(n =100,mean = 0, sd = 10)
+sigma = rexp(n = 100,rate = 1)
+height_sim = rnorm(n = 100, mean = mu, sd = sigma)
+dens(height_sim)
+```
+
+![](Ch4_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+
 4M2. Translate the model just above into a quap formula.
+
+``` r
+# mod = quap(
+  flist = alist(
+    y ~ dnorm(mu, sigma), 
+    mu ~ dnorm(0, 10), 
+    sigma ~ dexp(1)
+       )
+#        )
+```
 
 4M3. Translate the quap model formula below into a mathematical model
 definition.
 
 ``` r
-flist <- alist( y ~ dnorm( mu , sigma ),
-mu <- a + b*x,
-a ~ dnorm( 0 , 10 ),
-b ~ dunif( 0 , 1 ),
-sigma ~ dexp( 1 )
+flist <- alist( 
+  y ~ dnorm( mu , sigma ), 
+  mu <- a + b*x,
+  a ~ dnorm( 0 , 10 ),
+  b ~ dunif( 0 , 1 ),
+  sigma ~ dexp( 1 )
 )
 ```
+
+on paper /
 
 4M4. A sample of students is measured for height each year for 3 years.
 After the third year, you want to fit a linear regression predicting
@@ -1154,12 +1271,86 @@ height using year as a predictor. Write down the mathematical model
 definition for this regression, using any variable names and priors you
 choose. Be prepared to defend your choice of priors.
 
+Assuming the scale is in cm:  
+Height is normally distributed with mean mu and sd sigma.  
+h\[i\] ~ N(mu, sigma)
+
+The mean height mu is the target of the predictive modeling.  
+mu now depends on year at i and some relationship strength beta.  
+mu = alpha + beta(year\[i\])
+
+Add priors for mu and alpha in cm.  
+a = N(40,10)  
+mu = N(40, 10) sigma = U(0,1) \*\* note the upper bound on sigma term
+should be larger like U(0,30)  
+beta = N(0,5)
+
 4M5. Now suppose I remind you that every student got taller each year.
 Does this information lead you to change your choice of priors? How?
+
+Now we know the beta is positive. So add a positive rate of 1cm per
+year.  
+beta = N(1,5)
 
 4M6. Now suppose I tell you that the variance among heights for students
 of the same age is never more than 64cm. How does this lead you to
 revise your priors?
+
+could change intercept prior.
+
+Prior predictive simulation.
+
+``` r
+N <- 100
+a <- rnorm(100, mean = 40, sd = 10)
+mu <- rnorm(100, mean = 40,sd = 10)
+sigma <- runif(100, min = 0, 30) 
+b <- rnorm(100,mean = 1, sd = 5) 
+```
+
+``` r
+plot(NULL,
+     xlim = c(0,100), ylim = c(20,300)
+     )
+for (i in 1:N) {
+  curve(
+    # the linear model: mu as a function of year
+    # 60 would have come from the data - the mean of height 
+    expr = a[i] + b[i] * (x - 60), 
+    from = 40, to = 80, add = TRUE, col = col.alpha(acol = 'black', alpha = 0.2)
+    )
+}
+```
+
+![](Ch4_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+
+Now using a log normal prior for beta:
+
+``` r
+N <- 100
+a <- rnorm(100, mean = 40, sd = 10)
+mu <- rnorm(100, mean = 40,sd = 10)
+sigma <- runif(100, min = 0, 30) 
+b <- rlnorm(n = 100,meanlog = 0,sdlog = 1)
+```
+
+``` r
+plot(NULL,
+     xlim = c(0,100), ylim = c(20,300)
+     )
+for (i in 1:N) {
+  curve(
+    # the linear model: mu as a function of year
+    # 60 would have come from the data - the mean of height 
+    expr = a[i] + b[i] * (x - 60), 
+    from = 40, to = 80, add = TRUE, col = col.alpha(acol = 'black', alpha = 0.2)
+    )
+}
+```
+
+![](Ch4_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+There are still some absurd values but there are less.
 
 Hard.
 
@@ -1216,7 +1407,7 @@ Can you interpret the resulting estimates?
 plot( height ~ weight , data=Howell1 , col=col.alpha(rangi2,0.4) )
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
 
 Then use samples from the quadratic approximate posterior of the model
 in (a) to superimpose on the plot: (1) the predicted mean height as a
