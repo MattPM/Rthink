@@ -1,0 +1,63 @@
+Chapter 5 The Many Variables & The Spurious Waffles
+================
+
+<!--   output: -->
+
+<!--   html_document: -->
+
+<!--     df_print: paged -->
+
+<!-- editor_options: -->
+
+<!--   chunk_output_type: inline -->
+
+### causal inference, directed acyclic graphs, multiple regression, confounds
+
+### 5.1 Spurious Association
+
+``` r
+# load data and copy 
+suppressMessages(library(rethinking)) 
+data(WaffleDivorce) 
+d <- WaffleDivorce
+
+# standardize variables
+d$A <- scale( d$MedianAgeMarriage ) 
+d$D <- scale( d$Divorce )
+```
+
+The linear model:  
+D\[i\] ∼ Normal( µ i , σ)  
+µ\[i\] = α + βA Ai  
+α ∼ Normal(0, 0.2)  
+βA ∼ Normal(0, 0.5)  
+σ ∼ Exponential(1)
+
+Intuition on working with the priors with data in scaled space:
+
+If a prior on β was 1, 1 sd change in age would lead to 1sd change in
+divorce. What is 1sd in age?
+
+``` r
+sd(d$MedianAgeMarriage)
+```
+
+    ## [1] 1.24363
+
+So with a prior on β of 1, 1.24 years delta would lead to 1sd delta in
+divorce. That is too strong of an effect.
+
+Model in quap
+
+``` r
+m5.1 = quap(
+  flist = alist(
+    D ~ dnorm(mu, sigma),
+    mu <- a + bA * A, 
+    a ~ dnorm(0, 0.2),
+    bA ~ dnorm(0,0.2), 
+    sigma ~ dexp(1)
+    ), data = d )
+```
+
+Simulate priors with extract.prior and link
