@@ -44,7 +44,7 @@ sd(d$MedianAgeMarriage)
 
 So with a prior on β of 1, 1.24 years delta would lead to 1sd delta in divorce. That is too strong of an effect. 
 
-Model in quap for both variables  
+Model in quap for both variables, one at a time. 
 ```{r}
 m5.1 = quap(
   flist = alist(
@@ -90,19 +90,45 @@ Posterior predictions from the model
 ```{r}
 ## R code 5.5
 # compute percentile interval of mean
+# a vector of 30 values to input into the link function 
+# corresponding to hypothetical values of A in sd space. 
 A_seq <- seq( from= -3 , to=3.2 , length.out=30 )
+
+# link - get a distribution of values for mu 
+# for every value of A_seq 
+# mu reflecting the mean of the outcome D at each hypothetical value of A from A_seq 
+# based on the model M5.1 where we defined µ[i] as: 
+# D[i] ∼ Normal( µ[i], σ)  
+# µ[i] = α + βA Ai  
 mu <- link(m5.1 , data=list(A=A_seq))
+
+# dim(mu) [1] 1000   30 
+# the 30 columns of mu represent 30 made up ages in age seq  
+# the 1000 rows represent 1000 samples from the posterior at A = A_seq[i]
+
+# summarize these samples for the posterior by extracting the mean value for mu 
 mu.mean <- apply(mu, 2, mean)
 mu.PI <- apply( mu , 2 , PI )
 
-# plot the actual data 
+# plot the actual data of each state D vs A.  
 plot(D ~ A, data=d , col=rangi2)
 # plot the average value for the line from the posterior of lines 
 lines(x = A_seq, y = mu.mean, lwd=2 )
 # plot the percentile interval 
 shade(mu.PI , A_seq)
+
+
 ```
 
+Here is a comparison of the coefficient estimate with a frequentist lm
+
+```{r}
+coef(lm(D~A, data = d))[2]
+```
+
+```{r}
+precis(object = m5.1)[2, ]$mean
+```
 
 
 DAGs - see in depth lecture notes. 
@@ -223,7 +249,7 @@ Visualizing the multiple regression posteriors to get a feel for teh influence o
 
 
 
-5.1.5.1  predictor residual plots  
+### 5.1.5.1  predictor residual plots  
 
 Average prediction error when we use all other predictor variables to model a *predictor* of interest. So we make a model of M here using A.  
 
@@ -242,8 +268,8 @@ m5.4 <- quap(
 mu <- link(m5.4)
 mu_mean <- apply( mu , 2 , mean )
 
-# compute the residual 
-# subtracting  observed marriage rate from the model predicted rate 
+# compute the residual for M after regressing on A 
+# subtract observed marriage rate from the model predicted rate 
 # based on the model above
 mu_resid <- d$M - mu_mean
 
@@ -278,4 +304,209 @@ Average divorce rate on both sides of 0 is about the same there is little relati
 
 
 multiple regression measures the *remaining* association *of each predictor* with the outcome, *after already knowing the other predictors.*  
+
+### 5.1.5.2. Posterior prediction plots  
+
+posterior predictive check by simulating predictions averaging over the posterior to see where / how the model fails. Note linear models are skeptical of extreme values and 'expect' regression to the mean. The simulation below shows the model underpredicts D for states with very high actual D and visa versa. Another use in this is finding what the outliers are and understanding them in this contrived example we know mormon population density dictates the outlier states 
+```{r}
+## R code 5.15
+# call link without specifying new data
+# so it uses original data
+# this outputs a posterior distribution estimate for predicted D 
+# for every state 
+mu <- link( m5.3 )
+
+# summarize samples from the posterior across cases
+mu_mean <- apply( mu , 2 , mean )
+mu_PI <- apply( mu , 2 , PI )
+
+# simulate observations
+# again no new data, so uses original data
+D_sim <- sim( m5.3 , n=1e4 )
+D_PI <- apply( D_sim , 2 , PI )
+
+## R code 5.16
+plot(mu_mean ~ d$D, col=rangi2 , ylim=range(mu_PI),
+     xlab="Observed divorce", ylab="Predicted divorce")
+# show identity line 
+abline(a=0, b=1, lty=2)
+for ( i in 1:nrow(d) ) lines( rep(d$D[i],2) , mu_PI[,i] , col=rangi2 )
+
+## R code 5.17
+# identify( x=d$D , y=mu_mean , labels=d$Loc )
+```
+
+
+
+*simulate a spurrious association*
+assume xreal is the true variable that causes y. Assume xspur is a spurious predictor. Assume xreal causes both xspur and y. In this case we can think of xspur as a outcome of xreal which we mistake for the true cause of y.  
+
+When you include both of these variables in a regression predicting y, xspur will have a small effect.  
+
+```{r}
+## R code 5.18
+N <- 100                         # number of cases
+x_real <- rnorm( N )             # x_real as Gaussian with mean 0 and stddev 1
+x_spur <- rnorm( N , x_real )    # x_spur as Gaussian with mean=x_real
+y <- rnorm( N , x_real )         # y as Gaussian with mean=x_real
+d <- data.frame(y,x_real,x_spur) # bind all together in data frame
+pairs(d, col = rangi2)
+```
+
+
+### 5.1.5.3 counterfactual plots  
+
+Assuming we have a hypothesis for the caual structure, we can simulate how the outcome would change if we changed one parameter at a time. For each value of thie 'intervention variable' we simulate from the posterior for all other variables including the outcome. to do this we need to know the whole DAG structure and model it in a single model.  
+
+We need to know how each variable is generated. We assume gaussian distribution generates each.  
+
+We also need to have some question, here we are asking how would influencing A impact the other varialbes; *to do this we need to model something else; how A influences M* didn't need this in m5.3 to estimate D but now we do need it to know what the consequences of ∆A.  
+
+A counterfactual simulation of changing the values of a variable implies a new DAG where no arrows enter the variable being manipulated (because we manually manipulate it). 
+
+```{r}
+## R code 5.19
+data(WaffleDivorce)
+d <- list()
+d$A <- standardize( WaffleDivorce$MedianAgeMarriage )
+d$D <- standardize( WaffleDivorce$Divorce )
+d$M <- standardize( WaffleDivorce$Marriage )
+
+# model to learn consequence of adjusting A.  
+m5.3_A <- quap(
+    alist(
+      ## A -> D <- M
+        D ~ dnorm( mu , sigma ) ,
+        mu <- a + bM*M + bA*A , # the multiple regression model for mean of D 
+        # priors 
+        a ~ dnorm( 0 , 0.2 ) ,
+        bM ~ dnorm( 0 , 0.5 ) ,
+        bA ~ dnorm( 0 , 0.5 ) ,
+        sigma ~ dexp( 1 ),
+      
+        
+        ## A -> M
+        M ~ dnorm( mu_M , sigma_M ),
+        mu_M <- aM + bAM*A, # the simple univariate linear regression for mean of D 
+        # priors  
+        aM ~ dnorm( 0 , 0.2 ),
+        bAM ~ dnorm( 0 , 0.5 ),
+        sigma_M ~ dexp( 1 )
+    ) , data = d )
+
+precis(m5.3_A)
+
+```
+
+
+From this model we see bAM is negative- M and A are strongly negatively correlated - the causal interpretation is changing A reduces M - what happens when we change A: 
+
+```{r}
+## R code 5.20
+A_seq <- seq( from=-2 , to=2 , length.out=30 )
+
+## R code 5.21
+# prep data
+sim_dat <- data.frame( A=A_seq )
+
+# simulate M and then D, using A_seq
+# THE ORDER OF THE vars ARGUMENT IS IMPORTANT HERE 
+# First we need to know the influence of A on M, 
+# before we can know the joint influence of A and M on D
+s <- sim( m5.3_A , data=sim_dat , vars=c("M","D") )
+
+## R code 5.22
+# this plot shows the estimated joint effect of manipulating A on D 
+# given the causal model with effects A -> D and A-> M -> D
+par(mfrow=c(1,2))
+# simulated total A effect on D 
+plot( sim_dat$A , colMeans(s$D) , ylim=c(-2,2) , type="l" ,
+    xlab="manipulated A" , ylab="counterfactual D"  )
+shade( object = apply(s$D,2,PI) , lim = sim_dat$A )
+mtext( "Total counterfactual effect of A on D" )
+
+# simulated effect of A on M 
+plot( sim_dat$A , colMeans(s$M) , ylim=c(-2,2) , type="l" ,
+    xlab="manipulated A" , ylab="counterfactual M"  )
+shade( object = apply(s$D,2,PI) , lim = sim_dat$A )
+mtext( "counterfactual effect of A -> M" )
+```
+
+
+If we want to simulate manipulating M, we can simulate a counterfactual for an average state values for A (which is 0 because we standardized the variables). 
+
+```{r}
+## R code 5.24
+sim_dat <- data.frame( M=seq(from=-2,to=2,length.out=30) , A=0 )
+head(sim_dat)
+
+s <- sim( m5.3_A , data=sim_dat , vars="D" )
+plot( sim_dat$M , colMeans(s) , ylim=c(-2,2) , type="l" ,
+    xlab="manipulated M" , ylab="counterfactual D"  )
+shade( apply(s,2,PI) , sim_dat$M )
+mtext( "Total counterfactual effect of M on D" )
+```
+
+
+no evidence for a strong effect of M on D.   
+
+*Simulating counterfactuals without the sim function*  
+define a range of values to assign to A  
+extract posterior samples by using he model definition with the samples. the model defines the distribution of M; convert that definition to the corresponding simulation function--rnorm in this model. 
+```{r}
+## R code 5.25
+A_seq <- seq( from=-2 , to=2 , length.out=30 )
+
+## R code 5.26
+# extract 1000 samples from the model using the samples 
+post <- extract.samples( m5.3_A )
+dim(post)
+head(post)
+
+```
+
+Now we make a dataframe with each column an age from age seq with the corresponding normal distribution simulation of M or D using hte model formula definition for the mean of M as the mean in the rnorm function. With these simulated M values we can also simulate the effect of changing A on D through M. 
+```{r}
+# M_sim <- with(post, sapply(1:30, function(i) rnorm(n = 1e3, mean = (aM + bAM*A_seq[i]), sigma_M)))
+set.seed(1990)
+# for each value of A in A seq 
+# make a normal distribution with n = 1000.
+# ouput matrix with each column an age in age seq. 
+M_sim <- with(post, 
+              # 'with' doing local scoping to 'post'. instead of post$aM we just write aM. 
+              sapply(1:30, function(i){
+                # note we use 'aM' not 'a'. 'a' is the M5.3 model intercept for D. 
+                rnorm(n = 1e3 , mean = aM + bAM*A_seq[i], sd = sigma_M)
+                }) 
+              )
+
+# NOTE 
+# this is how I would normally write this, this is equivalent to the above  
+ls = list()
+for (i in 1:length(A_seq)) {
+  ls[[i]] = 
+    with(post, 
+         rnorm(n = 1e3, mean = aM + bAM*A_seq[i], sd = sigma_M)
+         )
+}
+M_sim2 = do.call(cbind, ls)
+all.equal(str(M_sim2), str(M_sim))
+
+# Now simulate D, the outcome, for each theoretical value of A. 
+# the mean of D in 5.3 is defined by the multiple regression component of the model. 
+## R code 5.27
+D_sim <- with(post, 
+              sapply( 1:30 ,
+                      # bA*A_seq[i] effect of age on D 
+                      # bM*M_sim[,i] the simulated effect of A -> M from the code above!  
+                      function(i) rnorm(n = 1e3, mean = a + bA*A_seq[i] + bM*M_sim[,i] , sd = sigma ) 
+                      ) 
+              )
+qplot(A_seq, colMeans(D_sim)) + 
+  theme_bw() +
+  ylab('total counterfactual effect of A on D') + 
+  xlab('manipulated values of A') + 
+  ggtitle('effect of changing A on D in m5.3 ( A -> D & A -> M -> D )')
+```
+
 
