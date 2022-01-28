@@ -12,6 +12,8 @@ output: github_document
 
 ### causal inference, directed acyclic graphs, multiple regression, confounds  
 
+Note see this great discussion: https://github.com/paul-buerkner/brms/issues/418 relevant to contrasts with emmeans in frequentist vs bayesian models.  
+
 ### 5.1 Spurious Association  
 
 ```{r}
@@ -557,7 +559,7 @@ This is due to passing a vector with NA values to a likelihood function like `dn
 We are predicting the outcome K- calories in milk as a function of other variables in different primate species. 
 
 
-```{r, eval=FALSE}
+```{r}
 
 ## R code 5.31
 # d$neocortex.perc
@@ -776,27 +778,71 @@ drawdag(MElist)
 
 # 5.3 categorical variables  
 
-indicator variables vs index variables. Indicator aka dummy variables, turn on parameters for certain observations. sex M F M = 1. the interpretation for alpha becomes the outcome for females only and the beta gives you the difference between male and female. The key insight is that with a bayesian model, using indicator variables makes estimating the prior harder becuse we need 2 parameters the female effect and the difference between male and female.  
+How are factor variables computationally represented in GLMs?  
+
+Typically ive worked with the indicator approach for qr factorization in limma: chapter 4 http://genomicsclass.github.io/book/. This is also what lm does.  
+
+Indicator variables vs index variables. Indicator aka dummy variables, turn "on" parameters for certain observations. sex M F M = 1. the interpretation for alpha becomes the outcome for females only and the beta gives you the difference between male and female. The key insight is that with a bayesian model, using indicator variables makes estimating the prior harder becuse we need 2 parameters the female effect and the difference between male and female.  
+
 
 Index variable is just a value 1, 2, 3, etc for each category. Makes estimating priors easier.  
 
-indicator variables are used with the design matrix approach. Index variables are used with multilevel models.  
+indicator variables are used with the design matrix approach. Index variables are used with multilevel models, learning index approach helps understand computational fit of multilevel models. 
+
+### 5.3.1 binary categories 
+male as an indicator variable has value 1.  
+```{r}
 
 ## R code 5.45
 data(Howell1)
 d <- Howell1
 str(d)
 
+```
+Model with male indicator.  
+
+h i ∼ Normal( µ i , σ)  
+µ i = α + β m mi  
+α ∼ Normal(178, 20)  
+β m ∼ Normal(0, 10)  
+σ ∼ Uniform(0, 50)  
+
+When M = 1, µi is multiplied by bM. When M = 0 (female) µi multiplied by 0 which makes the linear model µi = alpha. *alpha now has a different interpretation* it is the average *for females* because of the indicator. beta is then the difference or the male effect. In the bayesian model, there is more uncertainty about one category in the priors arbitrarily. Male has 2 priors the average and the difference *making the prior distribution wider*  
+
+```{r}
 ## R code 5.46
 mu_female <- rnorm(1e4,178,20)
 mu_male <- rnorm(1e4,178,20) + rnorm(1e4,0,10)
-precis( data.frame( mu_female , mu_male ) )
+qplot( mu_female );
+qplot( mu_male ) 
+```
+
+
+*Index variable approach*  
+
+statistical model for index variable model: 
+
+h[i] ∼ Normal(µi, σ)  
+µ[i] = αsex[i]  
+*α[j] ∼ Normal(178, 20) , for j = 1..2*
+σ ∼ Uniform(0, 50)  
+
+The step in bold creates a LIST of alpha parameters, one for each value in the index variable. Now the categories can get the same priors if we think prior to seeing the data, there is no difference. 
+
+*index variable model with a contrast to test categorical differences*
+See book p 162  
+**A common error in interpretation of parameter estimates is to suppose that because one parameter is sufficiently far from zero—is “significant”—and another parameter is not—is “not significant”—that the difference between the parameters is also significant. This is not necessarily so. source 83 - Gelman paper. This isn’t just an issue for non-Bayesian analysis: If you want to know the distribution of a difference, then you must compute that difference, a contrast.**
+
+
+
+
+```{r}
 
 ## R code 5.47
-d$sex <- ifelse( d$male==1 , 2 , 1 )
-str( d$sex )
+d$sex <- ifelse(d$male==1, 2 , 1 )
 
 ## R code 5.48
+
 m5.8 <- quap(
     alist(
         height ~ dnorm( mu , sigma ) ,
@@ -804,12 +850,27 @@ m5.8 <- quap(
         a[sex] ~ dnorm( 178 , 20 ) ,
         sigma ~ dunif( 0 , 50 )
     ) , data=d )
-precis( m5.8 , depth=2 )
+precis( m5.8 , depth=2 ) # depth = 2 means show vector parameter estimates like the one we just specified. 
+
+
 
 ## R code 5.49
 post <- extract.samples(m5.8)
+
+# manually compute the contrast 
 post$diff_fm <- post$a[,1] - post$a[,2]
 precis( post , depth=2 )
+
+```
+
+Great discussion between brms and emmeans developers!  
+
+https://github.com/paul-buerkner/brms/issues/418  
+
+### 5.3.2  
+Many categories -- can usethe same index variable approach. 
+
+```{r}
 
 ## R code 5.50
 data(milk)
@@ -821,6 +882,8 @@ d$clade_id <- as.integer( d$clade )
 
 ## R code 5.52
 d$K <- standardize( d$kcal.per.g )
+
+# fit model 
 m5.9 <- quap(
     alist(
         K ~ dnorm( mu , sigma ),
@@ -828,9 +891,21 @@ m5.9 <- quap(
         a[clade_id] ~ dnorm( 0 , 0.5 ),
         sigma ~ dexp( 1 )
     ) , data=d )
+
+
+# plot posterior distributions 
+# make labels for alpha variables 
 labels <- paste( "a[" , 1:4 , "]:" , levels(d$clade) , sep="" )
-plot( precis( m5.9 , depth=2 , pars="a" ) , labels=labels ,
-    xlab="expected kcal (std)" )
+# plot posteriors 
+plot(
+  precis(m5.9, depth = 2, pars = "a"), 
+  labels = labels, xlab = "expected kcal (std)" 
+  )
+
+```
+
+
+```{r}
 
 ## R code 5.53
 set.seed(63)
@@ -847,6 +922,9 @@ m5.10 <- quap(
     ) , data=d )
 
 ```
+
+see book for written answers  
+
 
 
 5E1. Which of the linear models below are multiple linear regressions?

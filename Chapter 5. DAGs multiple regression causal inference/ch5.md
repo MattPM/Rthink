@@ -13,6 +13,10 @@ Chapter 5 The Many Variables & The Spurious Waffles
 
 ### causal inference, directed acyclic graphs, multiple regression, confounds
 
+Note see this great discussion:
+<https://github.com/paul-buerkner/brms/issues/418> relevant to contrasts
+with emmeans in frequentist vs bayesian models.
+
 ### 5.1 Spurious Association
 
 ``` r
@@ -137,7 +141,7 @@ coef(lm(D~A, data = d))[2]
 precis(object = m5.1)[2, ]$mean
 ```
 
-    ## [1] -0.449981
+    ## [1] -0.4500292
 
 DAGs - see in depth lecture notes.
 
@@ -440,6 +444,8 @@ pairs(d, col = rangi2)
 
 ![](ch5_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
+### 5.1.5.3 counterfactual plots
+
 Assuming we have a hypothesis for the caual structure, we can simulate
 how the outcome would change if we changed one parameter at a time. For
 each value of thie ‘intervention variable’ we simulate from the
@@ -625,8 +631,8 @@ M_sim <- with(post,
                 }) 
               )
 
-# NOTE 
-# this is how I would normally write this, this is equivalent to the above  
+
+# I would normally structure like below, this is equivalent to above  
 ls = list()
 for (i in 1:length(A_seq)) {
   ls[[i]] = 
@@ -662,3 +668,650 @@ qplot(A_seq, colMeans(D_sim)) +
 ```
 
 ![](ch5_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+## 5.2 masked relationships
+
+Key insights p 151 top.
+
+Using multiple predictors can reveal a relationship with outcome when
+the bivariate relationships are not apparent - this happens when:  
+2 predictors are correlated with one another, one is positively
+associated with outcome other is negatively associated with outcome.
+
+*Dataset: composition of milk across primate species*  
+looking at mass, neocortex percentage, calories in milk. One hypothesis
+from life history perspective is that larger brains require more
+energetic milk to help brain grow quickly. var `neocortex.perc` below is
+the percentage of brain mass that is neocortex percentage.
+
+K = calories in milk  
+N = percent of brain that is neocortex  
+M = log body mass of primate
+
+``` r
+## R code 5.28
+library(rethinking)
+data(milk)
+d <- milk
+str(d)
+```
+
+    ## 'data.frame':    29 obs. of  8 variables:
+    ##  $ clade         : Factor w/ 4 levels "Ape","New World Monkey",..: 4 4 4 4 4 2 2 2 2 2 ...
+    ##  $ species       : Factor w/ 29 levels "A palliata","Alouatta seniculus",..: 11 8 9 10 16 2 1 6 28 27 ...
+    ##  $ kcal.per.g    : num  0.49 0.51 0.46 0.48 0.6 0.47 0.56 0.89 0.91 0.92 ...
+    ##  $ perc.fat      : num  16.6 19.3 14.1 14.9 27.3 ...
+    ##  $ perc.protein  : num  15.4 16.9 16.9 13.2 19.5 ...
+    ##  $ perc.lactose  : num  68 63.8 69 71.9 53.2 ...
+    ##  $ mass          : num  1.95 2.09 2.51 1.62 2.19 5.25 5.37 2.51 0.71 0.68 ...
+    ##  $ neocortex.perc: num  55.2 NA NA NA NA ...
+
+``` r
+## R code 5.29
+d$K <- standardize( d$kcal.per.g )
+d$N <- standardize( d$neocortex.perc )
+d$M <- standardize( log(d$mass) )
+
+## R code 5.30
+# m5.5_draft <- quap(
+#     alist(
+#         K ~ dnorm( mu , sigma ) ,
+#         mu <- a + bN*N ,
+#         a ~ dnorm( 0 , 1 ) ,
+#         bN ~ dnorm( 0 , 1 ) ,
+#         sigma ~ dexp( 1 )
+#     ) , data=d )
+```
+
+The model above produces an error: Error in quap(alist(K ~ dnorm(mu,
+sigma), mu \<- a + bN \* N, a ~ dnorm(0, : initial value in ‘vmmin’ is
+not finite The start values for the parameters were invalid. This could
+be caused by missing values (NA) in the data or by start values outside
+the parameter constraints. If there are no NA values in the data, try
+using explicit start values.
+
+This is due to passing a vector with NA values to a likelihood function
+like `dnorm`. For now we will do `complete.cases` analysis and use weak
+priors, do prior predictive simulation.
+
+We are predicting the outcome K- calories in milk as a function of other
+variables in different primate species.
+
+``` r
+## R code 5.31
+# d$neocortex.perc
+
+## R code 5.32
+dcc <- d[complete.cases(d$K,d$N,d$M) , ]
+
+## R code 5.33
+m5.5_draft <- quap(
+    alist(
+        K ~ dnorm( mu , sigma ) ,
+        mu <- a + bN*N ,
+        a ~ dnorm( 0 , 1 ) ,
+        bN ~ dnorm( 0 , 1 ) ,
+        sigma ~ dexp( 1 )
+    ) , data=dcc )
+
+## R code 5.34
+prior <- extract.prior( m5.5_draft )
+xseq <- c(-2,2)
+mu <- link( m5.5_draft , post=prior , data=list(N=xseq) )
+plot( NULL , xlim=xseq , ylim=xseq , main = 'weak priors')
+for ( i in 1:50 ) lines( xseq , mu[i,] , col=col.alpha("black",0.3))
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+These priors imply impossible relationships. Using a smaller alpha
+parameter and smaller sigma on the slope:
+
+``` r
+## R code 5.35
+m5.5 <- quap(
+    alist(
+        K ~ dnorm( mu , sigma ) ,
+        mu <- a + bN*N ,
+        # prior for a 
+        a ~ dnorm( 0 , 0.2 ) ,
+        bN ~ dnorm( 0 , 0.5 ) ,
+        sigma ~ dexp( 1 )
+    ) , data=dcc )
+
+## R code 5.34
+prior <- extract.prior( m5.5 )
+xseq <- c(-2,2)
+mu <- link( m5.5_draft , post=prior , data=list(N=xseq) )
+plot( NULL , xlim=xseq , ylim=xseq , main = 'smaller bN sd and smaller alpha')
+for ( i in 1:50 ) lines( xseq , mu[i,] , col=col.alpha("black",0.3))
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+
+``` r
+## R code 5.36
+precis( m5.5 )
+```
+
+    ##             mean        sd       5.5%     94.5%
+    ## a     0.03994029 0.1544907 -0.2069658 0.2868463
+    ## bN    0.13323422 0.2237468 -0.2243564 0.4908249
+    ## sigma 0.99982010 0.1647080  0.7365850 1.2630552
+
+The standard deviation of the relationship is 2x the posterior mean.
+visualizing the posterior.
+
+``` r
+## R code 5.37
+# sequence of x values for plot
+xseq <- seq( from=min(dcc$N)-0.15 , to=max(dcc$N)+0.15 , length.out=30 )
+
+# link to predict the outcome mean from the model 
+# when using simulated data for the predictor N 
+# produces matrix with columns  = X seq values 
+# values are posterior distributions for mu
+mu <- link( m5.5 , data=list(N=xseq) )
+
+# summarize the mu values for each x seq 
+mu_mean <- apply(mu,2,mean)
+mu_PI <- apply(mu,2,PI)
+
+# visualize the actual data vs the model 
+plot( K ~ N , data=dcc, main = 'M5.5' )
+lines( xseq , mu_mean , lwd=2 )
+shade( mu_PI , xseq )
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+
+Now fit a univariate model of body mass M predicting calories in milk K
+and plot the posterior
+
+``` r
+# same as above
+## R code 5.38
+m5.6 <- quap(
+    alist(
+        K ~ dnorm( mu , sigma ) ,
+        mu <- a + bM*M,
+        a ~ dnorm( 0 , 0.2 ) ,
+        bM ~ dnorm( 0 , 0.5 ) ,
+        sigma ~ dexp( 1 )
+    ) , data=dcc )
+precis(m5.6)
+```
+
+    ##              mean        sd       5.5%      94.5%
+    ## a      0.04680829 0.1512845 -0.1949735 0.28859007
+    ## bM    -0.28262660 0.1928969 -0.5909131 0.02565991
+    ## sigma  0.94937676 0.1571028  0.6982961 1.20045736
+
+``` r
+# plot posterior vs data 
+xseq <- seq( from=min(dcc$N)-0.15 , to=max(dcc$N)+0.15 , length.out=30 )
+mu <- link( m5.6, data = list(M = xseq))
+
+# visualize the actual data vs the model 
+plot( K ~ N , data=dcc, main = 'M5.6' )
+lines( xseq , apply(mu,2,mean) , lwd=2 )
+shade( apply(mu,2,PI) , xseq )
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+Association of mass is negative but highly uncertain, like association
+of cortex percent.
+
+Adding both predictors:
+
+``` r
+m5.7 <- quap(
+  flist = alist(
+    #outcome 
+    K ~ dnorm(mu,sigma), 
+    # model 
+    mu <- a + bN*N + bM*M, 
+    # priors 
+     a ~ dnorm( 0 , 0.2 ) ,
+        bN ~ dnorm( 0 , 0.5 ) ,
+        bM ~ dnorm( 0 , 0.5 ) ,
+        sigma ~ dexp( 1 )
+    ) , data=dcc )
+  
+precis(m5.7)
+```
+
+    ##              mean        sd       5.5%      94.5%
+    ## a      0.06799174 0.1339987 -0.1461640  0.2821475
+    ## bN     0.67511736 0.2482986  0.2782882  1.0719465
+    ## bM    -0.70299057 0.2207870 -1.0558509 -0.3501302
+    ## sigma  0.73801430 0.1324618  0.5263147  0.9497139
+
+By including both predictors in the regression, the association of both
+with outcome has increased:
+
+``` r
+## R code 5.40
+plot( coeftab( m5.5 , m5.6 , m5.7 ) , pars=c("bM","bN") )
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+
+``` r
+pairs(dcc[,c('K','M', 'N')])
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
+see p 151, Multiple DAGs imply the same *contitional independences* -
+there are no contidional independences. Since they produce the same
+cond. indep. the DAGs are a *markov equivalence set.*
+
+Assume the following DAG structure with an unknown variable U.  
+M -\> K  
+N -\> K  
+M \<- U -\> K
+
+We can make the counterfactual plots to see how m5.7 sees the
+association between each variable on the outcome. The counterfactual
+plot manipulates M and N, breaking the influence of U. We simulate
+values for the posterior distribution of mu (of K) from m5.7 using
+simulated values with N held fixed at 0 for a series of M, visa versa
+
+``` r
+## R code 5.41
+# simulate 30 M values 
+xseq <- seq(from=min(dcc$M)-0.15, to=max(dcc$M)+0.15, length.out=30)
+mu <- link( m5.7 , data=data.frame( M=xseq , N=0 ) ) # hold N at 0
+plot( NULL , xlim=range(dcc$M) , ylim=range(dcc$K), ylab = "K", xlab = "Msim", main = 'counterfactual; N = 0')
+lines( xseq , apply(mu,2,mean) , lwd=2 )
+shade( apply(mu,2,PI) , xseq )
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+
+``` r
+# simulate 
+xseq <- seq(from=min(dcc$N)-0.15, to=max(dcc$N)+0.15, length.out=30)
+mu <- link( m5.7 , data=data.frame( M=0 , N=xseq ) ) # hold M at 0
+# plot 
+plot( NULL , xlim=range(dcc$N) , ylim=range(dcc$K), ylab = "K", xlab = "Nsim", main = 'counterfactual; M = 0')
+lines( xseq , apply(mu,2,mean) , lwd=2 )
+shade( apply(mu,2,PI) , xseq )
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-31-2.png)<!-- -->
+
+Simulating a masking relationship conditional on some DAG: the key is
+understanding why we do `K <- rnorm( n = n , mean = N - M )` N - M. see
+below.
+
+There is a masking pattern: the slopes become more extreme in m5.7
+
+I ‘cheat’ here and use the least squares estimates for simplicity.
+
+Given this DAG:
+
+``` r
+dag = dagitty::dagitty("dag{ 
+M -> K <- N
+M -> N }")
+drawdag(dag)  
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+
+*simulate data* where 2 meaningful predictors M and N act to mask one
+another.
+
+``` r
+n <- 100
+# M causes N ; both influence K 
+## R code 5.42
+# M -> K <- N
+# M -> N
+M <- rnorm( n = n )
+N <- rnorm( n = n , mean =  M )
+K <- rnorm( n = n , mean =  N - M )
+d_sim <- data.frame(K=K,N=N,M=M)
+
+m5.5 = lm(K ~ N, d_sim)
+m5.6 = lm(K ~ M, d_sim)
+m5.7 = lm(K ~ N + M, d_sim)
+plot(coeftab(m5.5,m5.6,m5.7), pars=c('M','N'), main ='simulation of a masking relationship')
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+
+Computing the *Markov equivalence* set of DAGs for the model above:
+
+``` r
+## R code 5.44
+library(dagitty)
+dag5.7 <- dagitty( "dag{
+    M -> K <- N
+    M -> N }" )
+coordinates(dag5.7) <- list( x=c(M=0,K=1,N=2) , y=c(M=0.5,K=1,N=0.5) )
+MElist <- equivalentDAGs(dag5.7)
+drawdag(MElist)
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
+# 5.3 categorical variables
+
+How are factor variables computationally represented in GLMs?
+
+Typically ive worked with the indicator approach for qr factorization in
+limma: chapter 4 <http://genomicsclass.github.io/book/>. This is also
+what lm does.
+
+Indicator variables vs index variables. Indicator aka dummy variables,
+turn “on” parameters for certain observations. sex M F M = 1. the
+interpretation for alpha becomes the outcome for females only and the
+beta gives you the difference between male and female. The key insight
+is that with a bayesian model, using indicator variables makes
+estimating the prior harder becuse we need 2 parameters the female
+effect and the difference between male and female.
+
+Index variable is just a value 1, 2, 3, etc for each category. Makes
+estimating priors easier.
+
+indicator variables are used with the design matrix approach. Index
+variables are used with multilevel models, learning index approach helps
+understand computational fit of multilevel models.
+
+### 5.3.1 binary categories
+
+male as an indicator variable has value 1.
+
+``` r
+## R code 5.45
+data(Howell1)
+d <- Howell1
+str(d)
+```
+
+    ## 'data.frame':    544 obs. of  4 variables:
+    ##  $ height: num  152 140 137 157 145 ...
+    ##  $ weight: num  47.8 36.5 31.9 53 41.3 ...
+    ##  $ age   : num  63 63 65 41 51 35 32 27 19 54 ...
+    ##  $ male  : int  1 0 0 1 0 1 0 1 0 1 ...
+
+Model with male indicator.
+
+h i ∼ Normal( µ i , σ)  
+µ i = α + β m mi  
+α ∼ Normal(178, 20)  
+β m ∼ Normal(0, 10)  
+σ ∼ Uniform(0, 50)
+
+When M = 1, µi is multiplied by bM. When M = 0 (female) µi multiplied by
+0 which makes the linear model µi = alpha. *alpha now has a different
+interpretation* it is the average *for females* because of the
+indicator. beta is then the difference or the male effect. In the
+bayesian model, there is more uncertainty about one category in the
+priors arbitrarily. Male has 2 priors the average and the difference
+*making the prior distribution wider*
+
+``` r
+## R code 5.46
+mu_female <- rnorm(1e4,178,20)
+mu_male <- rnorm(1e4,178,20) + rnorm(1e4,0,10)
+qplot( mu_female );
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](ch5_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+
+``` r
+qplot( mu_male ) 
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](ch5_files/figure-gfm/unnamed-chunk-36-2.png)<!-- -->
+
+*Index variable approach*
+
+statistical model for index variable model:
+
+h\[i\] ∼ Normal(µi, σ)  
+µ\[i\] = αsex\[i\]  
+*α\[j\] ∼ Normal(178, 20) , for j = 1..2* σ ∼ Uniform(0, 50)
+
+The step in bold creates a LIST of alpha parameters, one for each value
+in the index variable. Now the categories can get the same priors if we
+think prior to seeing the data, there is no difference.
+
+*index variable model with a contrast to test categorical differences*
+See book p 162  
+**A common error in interpretation of parameter estimates is to suppose
+that because one parameter is sufficiently far from zero—is
+“significant”—and another parameter is not—is “not significant”—that
+the difference between the parameters is also significant. This is not
+necessarily so. source 83 - Gelman paper. This isn’t just an issue for
+non-Bayesian analysis: If you want to know the distribution of a
+difference, then you must compute that difference, a contrast.**
+
+``` r
+## R code 5.47
+d$sex <- ifelse(d$male==1, 2 , 1 )
+
+## R code 5.48
+
+m5.8 <- quap(
+    alist(
+        height ~ dnorm( mu , sigma ) ,
+        mu <- a[sex] ,
+        a[sex] ~ dnorm( 178 , 20 ) ,
+        sigma ~ dunif( 0 , 50 )
+    ) , data=d )
+precis( m5.8 , depth=2 ) # depth = 2 means show vector parameter estimates like the one we just specified. 
+```
+
+    ##            mean        sd      5.5%     94.5%
+    ## a[1]  134.91106 1.6068884 132.34294 137.47918
+    ## a[2]  142.57840 1.6974252 139.86559 145.29121
+    ## sigma  27.30918 0.8279833  25.98591  28.63246
+
+``` r
+## R code 5.49
+post <- extract.samples(m5.8)
+
+# manually compute the contrast 
+post$diff_fm <- post$a[,1] - post$a[,2]
+precis( post , depth=2 )
+```
+
+    ##               mean        sd      5.5%      94.5%     histogram
+    ## sigma    27.316679 0.8213908  25.99641  28.635458 ▁▁▁▁▃▅▇▇▃▂▁▁▁
+    ## a[1]    134.905066 1.6295318 132.32795 137.484631 ▁▁▁▂▅▇▇▅▂▁▁▁▁
+    ## a[2]    142.578477 1.7027387 139.83974 145.284457 ▁▁▁▂▃▇▇▇▃▂▁▁▁
+    ## diff_fm  -7.673411 2.3878915 -11.47846  -3.833166    ▁▁▁▃▇▇▃▁▁▁
+
+Great discussion between brms and emmeans developers\!
+
+<https://github.com/paul-buerkner/brms/issues/418>
+
+### 5.3.2
+
+Many categories – can usethe same index variable approach.
+
+``` r
+## R code 5.50
+data(milk)
+d <- milk
+levels(d$clade)
+```
+
+    ## [1] "Ape"              "New World Monkey" "Old World Monkey"
+    ## [4] "Strepsirrhine"
+
+``` r
+## R code 5.51
+d$clade_id <- as.integer( d$clade )
+
+## R code 5.52
+d$K <- standardize( d$kcal.per.g )
+
+# fit model 
+m5.9 <- quap(
+    alist(
+        K ~ dnorm( mu , sigma ),
+        mu <- a[clade_id],
+        a[clade_id] ~ dnorm( 0 , 0.5 ),
+        sigma ~ dexp( 1 )
+    ) , data=d )
+
+
+# plot posterior distributions 
+# make labels for alpha variables 
+labels <- paste( "a[" , 1:4 , "]:" , levels(d$clade) , sep="" )
+# plot posteriors 
+plot(
+  precis(m5.9, depth = 2, pars = "a"), 
+  labels = labels, xlab = "expected kcal (std)" 
+  )
+```
+
+![](ch5_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+
+``` r
+## R code 5.53
+set.seed(63)
+d$house <- sample( rep(1:4,each=8) , size=nrow(d) )
+
+## R code 5.54
+m5.10 <- quap(
+    alist(
+        K ~ dnorm( mu , sigma ),
+        mu <- a[clade_id] + h[house],
+        a[clade_id] ~ dnorm( 0 , 0.5 ),
+        h[house] ~ dnorm( 0 , 0.5 ),
+        sigma ~ dexp( 1 )
+    ) , data=d )
+```
+
+see book for written answers
+
+5E1. Which of the linear models below are multiple linear regressions?
+
+1)  µ i = α + β xi
+
+2)  µ i = β x x i + β z zi (3) µ i = α + β (x i − z i )
+
+3)  µ i = α + β x x i + β z zi
+
+5E2. Write down a multiple regression to evaluate the claim: Animal
+diversity is linearly related to latitude, but only after controlling
+for plant diversity. You just need to write down the model definition.
+
+5E3. Write down a multiple regression to evaluate the claim: Neither
+amount of funding nor size of laboratory is by itself a good predictor
+of time to PhD degree; but together these variables are both positively
+associated with time to degree. Write down the model definition and
+indicate which side of zero each slope parameter should be on.
+
+5E4. Suppose you have a single categorical predictor with 4 levels
+(unique values), labeled A, B, C and D. Let A i be an indicator variable
+that is 1 where case i is in category A. Also suppose B i , C i , and D
+i for the other categories. Now which of the following linear models are
+inferentially equivalent ways to include the categorical variable in a
+regression? Models are inferentially equivalent when it’s possible to
+compute one posterior distribution from the posterior distribution of
+another model.
+
+1)  µ i = α + β A A i + β B B i + β D Di
+
+2)  µ i = α + β A A i + β B B i + β C C i + β D Di
+
+3)  µ i = α + β B B i + β C C i + β D Di
+
+4)  µ i = α A A i + α B B i + α C C i + α D Di (5) µ i = α A (1 − B i −
+    C i − D i ) + α B B i + α C C i + α D Di
+
+Medium.
+
+5M1. Invent your own example of a spurious correlation. An outcome
+variable should be correlated with both predictor variables. But when
+both predictors are entered in the same model, the correlation between
+the outcome and one of the predictors should mostly vanish (or at least
+be greatly reduced).
+
+5M2. Invent your own example of a masked relationship. An outcome
+variable should be correlated with both predictor variables, but in
+opposite directions. And the two predictor variables should be
+correlated with one another.
+
+5M3. It is sometimes observed that the best predictor of fire risk is
+the presence of firefightersStates and localities with many firefighters
+also have more fires. Presumably firefighters do not cause fires.
+Nevertheless, this is not a spurious correlation. Instead fires cause
+firefighters. Consider the same reversal of causal inference in the
+context of the divorce and marriage data. How might a high divorce rate
+cause a higher marriage rate? Can you think of a way to evaluate this
+relationship, using multiple regression?
+
+5M4. In the divorce data, States with high numbers of Mormons (members
+of The Church of Jesus Christ of Latter-day Saints, LDS) have much lower
+divorce rates than the regression models expected. Find a list of LDS
+population by State and use those numbers as a predictor variable,
+predicting divorce rate using marriage rate, median age at marriage, and
+percent LDS population (possibly standardized). You may want to consider
+transformations of the raw percent LDS variable.
+
+5M5. One way to reason through multiple causation hypotheses is to
+imagine detailed mechanisms through which predictor variables may
+influence outcomes. For example, it is sometimes argued that the price
+of gasoline (predictor variable) is positively associated with lower
+obesity rates (outcome variable). However, there are at least two
+important mechanisms by which the price of gas could reduce obesity.
+First, it could lead to less driving and therefore more exercise.
+Second, it could lead to less driving, which leads to less eating out,
+which leads to less consumption of huge restaurant meals. Can you
+outline one or more multiple regressions that address these two
+mechanisms? Assume you can have any predictor data you need.
+
+Hard. All three exercises below use the same data, data(foxes) (part of
+rethinking). 84 The urban fox (Vulpes vulpes) is a successful exploiter
+of human habitat. Since urban foxes move in packs and defend
+territories, data on habitat quality and population density is also
+included. The data frame has five columns:
+
+1)  group: Number of the social group the individual fox belongs to
+
+2)  avgfood: The average amount of food available in the territory
+
+3)  groupsize: The number of foxes in the social group
+
+4)  area: Size of the territory
+
+5)  weight: Body weight of the individual fox
+
+5H1. Fit two bivariate Gaussian regressions, using quap: (1) body weight
+as a linear function of territory size (area), and (2) body weight as a
+linear function of groupsize. Plot the results of these regressions,
+displaying the MAP regression line and the 95% interval of the mean. Is
+either variable important for predicting fox body weight?
+
+5H2. Now fit a multiple linear regression with weight as the outcome and
+both area and groupsize as predictor variables. Plot the predictions of
+the model for each predictor, holding the other predictor constant at
+its mean. What does this model say about the importance of each
+variable? Why do you get different results than you got in the exercise
+just above?
+
+5H3. Finally, consider the avgfood variable. Fit two more multiple
+regressions: (1) body weight as an additive function of avgfood and
+groupsize, and (2) body weight as an additive function of all three
+variables, avgfood and groupsize and area. Compare the results of these
+models to the previous models you’ve fit, in the first two exercises.
+(a) Is avgfood or area a better predictor of body weight? If you had to
+choose one or the other to include in a model, which would it be?
+Support your assessment with any tables or plots you choose. (b) When
+both avgfood or area are in the same model, their effects are reduced
+(closer to zero) and their standard errors are larger than when they are
+included in separate models. Can you explain this result?
