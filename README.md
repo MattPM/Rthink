@@ -9,10 +9,13 @@
 
 My notes, code, examples and problem set solutions for the textbook
 [Statistical Rethinking - *A Bayesian Course with Examples in R and
-Stan*](https://xcelab.net/rm/statistical-rethinking/)"
+Stan*](https://xcelab.net/rm/statistical-rethinking/)" The .md documents
+for each chapter are readable.
 
 ### Course:
 
+[book code
+boxes](https://github.com/rmcelreath/rethinking/blob/master/book_code_boxes.txt)  
 [course website](https://xcelab.net/rm/statistical-rethinking/)  
 [2022
 lectures](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)  
@@ -27,9 +30,8 @@ lectures](https://www.youtube.com/channel/UCNJK6_DZvcMqNSzQdEkzvzA)
 
 ### code translations by others
 
-[julia translation](https://github.com/StatisticalRethinkingJulia)  
-[stan translation](https://vincentarelbundock.github.io/rethinking2/)  
-[brms translation](https://bookdown.org/content/4857/)
+[brms translation](https://bookdown.org/content/4857/)  
+[julia translation](https://github.com/StatisticalRethinkingJulia)
 
 ### Lectures
 
