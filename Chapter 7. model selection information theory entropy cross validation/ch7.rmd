@@ -656,9 +656,131 @@ WAIC(m5.3t)
 
 Note there is now no warning about high penalty values. 
 
+```{r}
+suppressMessages(library(rethinking))
+
+
+```
 
 
 
+7.1 Information entropy is a way to measure the reduction in uncertainty when we learn an outcome. The measure of uncertainty from some probability distribution should be continuous, should increase as the number of elements it predicts increases and should be an addative combination of those things.  
+
+7.2 
+entropy of an event occuring 70% of the time. 
+```{r}
+ - ((0.7 * log(0.7) ) + (0.3 * log(0.3)))
+```
+
+
+7.3 
+Entrpy of a loaded 4-sided die. 
+```{r}
+dice = list(one = 0.2, two = 0.25, three = 0.25, four = 0.3)
+
+# the probabilities add to 1 of the dice. 
+sum(unlist(dice))
+
+# calculate entropy manually 
+xx = unlist(dice)
+calc_entropy = function(x){ 
+  -sum(x * log(x))
+}
+  
+# calculate entropy manually 
+ent1 = calc_entropy(x = xx)
+
+# calc entropy with function 
+ent2 = entropy::entropy.empirical(y = unlist(dice))
+
+all.equal(ent1, ent2 )
+```
+
+7.5 
+
+```{r}
+new.die = c(0, 0.33, 0.33, 0.33)
+calc_entropy(new.die)
+```
+We actually need to drop the event that can't happen. 
+
+```{r}
+calc_entropy(new.die[-1])
+```
+
+7.1m   
+WAIC is like AIC but it has the penalty term instead of being equal to 2p is equal to the variance of the log probabilities of each observation according to the model. The first term in each represents the deviance (estimated divergence) of the model fit to the training data, for AIC its the deviance, for WAIC, its a posterior distribution over each observation with the penalty term also summing over a posterior distribution. If the mean deviance is equal to the posterior mean then AIC and WAIC will basically be the same.  
+
+
+7.2m 
+With model selection, we are losing information about the structural relationships between parameters in the model; model selection based on information criteria is more for prediction whereas model comparison is more for understanding the biology.  
+
+7.3m The values of information criteria are in arbitrary units so must be compared to fits of the same data by definition. 
+
+7.4m if the prior is more informative in that narrowness improves the fit, then the penalty term for aic stays the same (2p) and the penalty term for WAIC will decrease because the posterior observation variance will decrease. (*less flexible models (more regularized priors) effective number of parameters (penalty) declines*).  
+
+7.5m informative priors reduce overfitting because they constrain the parameter values a model considers as plausible making the model more skeptical of more highly leveraged data points. (*the regularized model finds the regular / recurring features of the data generation process*).  
+
+7.6m overly informatie piors are too constrained and will not even learn the regular features.  
+
+7.7 
+```{r}
+data("Laffer")
+d = Laffer
+d$rev = d$tax_revenue / max(d$tax_revenue)
+d$rate = d$tax_rate / max(d$tax_rate)
+
+plot(d$rev, d$rate)
+m1 = lm(rev ~ rate, data = d)
+
+
+m1 = quap( 
+  alist( 
+    rev ~ dnorm(mu, sigma),
+    mu <- alpha + bR*rate, 
+    alpha ~ dnorm(0.5, 0.1),
+    bR ~ dnorm(0.5, 0.1), 
+    sigma ~ dexp(1)
+    ), 
+  data = d)
+
+m2 = quap( 
+  alist( 
+    rev ~ dnorm(mu, sigma),
+    mu <- alpha + bR*rate + bR*rate^2 + bR*rate^3, 
+    alpha ~ dnorm(0.5, 0.1),
+    bR ~ dnorm(0.5, 0.1), 
+    sigma ~ dexp(1)
+    ), 
+  data = d)
+
+
+compare(m1, m2)
+
+rate.seq = seq(0,max(d$rate), length.out = 30)
+rev.seq = seq(0, max(d$rev),length.out = 30)
+mu.m1 = link(m1, data = list(rate = rate.seq))
+mu.m2 = link(m2, data = list(rate = rate.seq))
+
+m1.mean = apply(mu.m1, 2, mean)
+m2.mean = apply(mu.m2, 2, mean)
+
+
+# plot it all 
+plot( rev ~ rate , d , col= rangi2  ) 
+lines( x = rate.seq , y = m1.mean) 
+lines( x = rate.seq , y = m2.mean, col = 'red') 
+
+```
+
+conclude that the relationship is positive even with a highly nonlinear fit. 
+
+```{r}
+m1.waic = WAIC(m1)
+m1.psis = PSIS(m1, pointwise = TRUE)
+plot(m1.psis$penalty)
+
+```
 
 
 
