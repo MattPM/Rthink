@@ -782,8 +782,69 @@ plot(m1.psis$penalty)
 
 ```
 
+7.3h  
+There are 3 islands with birb populations observed in the following frequencies. 
+Calculate entropy of each island. 
+```{r}
+islands = list(
+  i1  = c(0.2, 0.2, 0.2, 0.2, 0.2),
+  i2 = c(0.8, 0.1, 0.05, 0.025, 0.025),
+  i3 = c(0.05, 0.15, 0.7, 0.05, 0.05, 0.05)
+)
+
+lapply(islands, calc_entropy)
 
 
+```
+
+manually: 
+```{r}
+-sum(i1 * log(i1))
+```
+
+
+The island where there would be the least reduction in uncertainty if we learned an outcome is the first island it has the highest entropy, the probability distribution of species in the first island is uniform. The entropy is lowest for the island which has a single species dominating the bird population. 
+
+Comparing calculating the kl divergence of predicting the proportion of birds on island 2 using the pbserved proportion on island 1, then approximating hte proportion of birds on island 1 using the observed proportion on island 2. KL divergence tells us what is the uncertainty difference when we use the distribution of birds on one island to approximate the proportion of birds on another? 
+
+*Note I made errors in this initially - the divergence is the difference; it does not have a negative sign like entropy*
+
+```{r}
+i1  = c(0.2, 0.2, 0.2, 0.2, 0.2)
+i2 = c(0.8, 0.1, 0.05, 0.025, 0.025)
+i3 = c(0.05, 0.15, 0.7, 0.05, 0.05, 0.05)
+
+# KL-divergence of predicting island 1 with island 2 
+sum(i1 * log(i1 / i2))
+
+```
+
+^ This is the uncertainty that arises when we estimate the high entropy island (i1) with the distribution in the low entropy island (i2). 
+
+```{r}
+# KL divergence of predicting island 2 with island 1 
+sum(i2 * log(i2 / i1))
+
+```
+
+^ This is uncertainty arising when we predict the high entropy island (i1) with the low entropy island (i2). 
+
+There is more uncertainty that is introduced when we predict the high entropy distribution using a lower entropy distribution. This is an extension of the rain in abu dabi example. If the probability distribution is very skewed or there are less possible things to predict then the cross entropy (p / q) will be higher than if we have a lot of uncertainty in the reference distribution
+```{r}
+i1  = c(0.99, 0.01) # low entropy 
+i2 = c(0.5, 0.5) # high entropy
+
+# KL divergence predicting i1 using i2
+sum(i1*log(i1 / i2))
+
+
+```
+
+```{r}
+# KL divergence predicting i2 using i1 
+sum( i2*log( i2/i1 ) )
+
+```
 
 
 

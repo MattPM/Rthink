@@ -669,5 +669,331 @@ impliedConditionalIndependencies( dag_6.2 )
 
 problems  
 
+6e1 false inference about causal effects can arise if we have a structural model connecting predictor variables to the outcome. Confounding can arise if we don't close a back door path between a predictor and outsome, if we condition on a collider or if we condition on a descendent that introduces a confound. We can also produce false inferences if we have the causal structure wrong to begin with (using multiple colinnear variables, giving us a weakly identifiable model  or any time we introduce a variable that is not actually causal).  
+
+6e2  
+
+Not having a randomized sample confounds inference. The idea with a randomized sample is that we close unobserved backdoor paths from the predictor variable of interest to the outcome of interest. Diet D, outcome O and unobserved U. 
+
+Non randomized : 
+```{r}
+dag.ex <- dagitty( "dag {
+    D -> O
+    U -> O 
+    U -> D
+    
+}")
+drawdag(dag.ex)
+
+
+```
+
+Randomized: 
+```{r}
+dag.ex <- dagitty( "dag {
+    D -> O
+    U -> O 
+    
+}")
+drawdag(dag.ex)
+```
+
+randmization blocks the backdoor path between the unobserved variable and diet. Conditioning has the same effect, however we cannot condition on unobserved variables. 
+
+6e4  
+the pipe, collider, the fork the descendent. 
+
+```{r}
+
+fork <- dagitty( "dag {
+    x -> z -> y
+}")
+impliedConditionalIndependencies(fork)
+
+```
+
+```{r}
+pipee <- dagitty( "dag {
+    x <- z -> y
+}")
+impliedConditionalIndependencies(pipee)
+
+```
+
+
+```{r}
+collider <- dagitty( "dag {
+    x -> z <- y
+}")
+impliedConditionalIndependencies(collider)
+
+```
+
+6m1  
+
+```{r}
+
+dag = dagitty("dag{ 
+              u [unobserved] 
+              x -> y
+              x <- u <- a -> c -> y
+              u-> b <- c
+              }")
+
+dag2 = dagitty("dag{ 
+              u[unobserved] 
+              x -> y
+              x <- u <- a -> c -> y
+              u-> b <- c
+              c <- v -> y
+              }")
+
+set.seed(140)
+drawdag(dag); drawdag(dag2)
+```
+
+```{r}
+adjustmentSets(x = dag,exposure = 'x', outcome = 'y')
+
+```
+
+this means either c orr a 
+
+```{r}
+adjustmentSets(x = dag2,exposure = 'x', outcome = 'y')
+```
+
+this means either c AND v or a. 
+
+```{r}
+impliedConditionalIndependencies(dag2)
+```
+
+
+see written out in  lecture 6 notes 
+
+6m2  
+
+Simulating data X -> Z -> Y  
+Z and X are highly correlated  
+include both in a prediction of Y. 
+
+
+```{r}
+N = 50
+z = rnorm(n = N, mean = 0, sd = 0.2)
+x = z + rnorm(n = N, mean = 0, sd = 0.1)
+y = rnorm(n = N, mean = 2,sd = 2)
+d = data.frame(x,z,y)
+pairs(d, col = rangi2)
+
+```
+
+
+multiple regression model with two correlated predictors 
+
+```{r}
+
+f1 = alist( 
+  # target 
+  y ~ dnorm(mu, sigma),
+  # likelihood
+  mu <- alpha + (Bx*x) + (Bz*z),
+  # priors 
+  alpha ~ dnorm(0,1), 
+  Bx ~ dnorm(0,1), 
+  Bz ~ dnorm(0,1), 
+  sigma ~ dexp(1)
+  )
+
+m1 = quap(flist = f1,data = d)
+precis(m1)
+```
+
+This implies (similar to using both legs as predictors) that one effect is positive and the other negative, since x and z are both so highly correlated, there is a very narrow range of x values corresponding to any z value. 
+
+*The parameters Bx and Bz never separately infuence y, only their sum influences y*  
+
+We can't really get at mechanistic understanding. But for prediction, how does the multiple regression model do compared to the single regression model? 
+
+```{r}
+f1 = y ~ x + z 
+f0 = y ~ x
+m1 = lm(f1, data =  d)
+m0 = lm(f0, data = d)
+AIC(m1, m0)
+```
+
+Here the AIc is pretty similar so it doesn't really illustrate the point that the multi[le regression models often have better predictive power. 
+
+
+6M3 see lec 6 written notes 
+
+
+6h3  
+
+FOXES ARE LIKE STREET GANGS 
+
+```{r}
+data("foxes")
+d = foxes
+head(d)
+```
+
+
+```{r}
+set.seed(23)
+foxdag = dagitty(
+"dag{
+A -> F -> W
+F -> S
+F -> W <- S
+}")
+drawdag(foxdag)
+```
+
+Total causal effect of area A on weight W 
+
+```{r}
+data("foxes")
+d = foxes
+d$S = d$groupsize = standardize(d$groupsize)
+d$F = standardize(d$avgfood)
+d$A = standardize(d$area)
+d$W = standardize(d$weight)
+
+d2 = d[ ,c('S','F','A','W')]
+pairs(d2, col = rangi2)
+```
+
+from the pairs plot food size and area are pretty colinear and there is probably a complicated relationship with weight which is the target of inference. 
+
+Total causal effect of area on weight. 
+
+```{r}
+adjustmentSets(x = foxdag,exposure = 'A', outcome = 'W')
+```
+
+prior predictive simulation. 
+```{r}
+f.fox = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + (BA*A), 
+  alpha ~ dnorm(0, 0.5), 
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+mfox = quap(flist = f.fox, data = d2)
+
+# simulate prior from model fit 
+p = extract.prior(mfox)
+
+# range of values for standrdized area to simulate priors over 
+aseq = c(-2,2)
+
+# simulate posterior distribution of mu
+prior.sim = link(fit = mfox, post = p, data = list(A = c(-2,2)))
+plot(NULL, xlim = aseq, ylim = aseq)
+for ( i in 1:100) lines(x = aseq, y = prior.sim[i, ], col = col.alpha(rangi2, 0.2))
+
+```
+
+posterior fit 
+```{r}
+precis(mfox)
+```
+
+plot posterior mean prediction and 89% compatibility interval vs data.
+
+```{r}
+sim.A = seq(-2, 2,length.out = 50)
+# extract posterior distributions for 50 simulated x values 
+post = link(mfox, data = data.frame(A = sim.A))
+
+plot(W ~ A , d2, col = rangi2)
+lines(sim.A, apply(post,2,mean))
+shade(apply(post, 2, PI), sim.A)
+```
+
+
+There is very little association between area and weight. 
+
+
+6H4  
+total causal effect of adding food 
+```{r}
+adjustmentSets(x = foxdag,exposure = 'F', outcome = 'W')
+```
+
+don't need to adjust for anything. 
+
+
+```{r}
+f.fox.2 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + (BF*F), 
+  alpha ~ dnorm(0, 0.5), 
+  BF ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+mfox.2 = quap(flist = f.fox.2, data = d2)
+
+precis(mfox.2)
+```
+
+similarly there is not really a direct effect of food on weight. 
+
+6H5 total causal effect of group size 
+
+```{r}
+adjustmentSets(foxdag,exposure = 'S', outcome = 'W')
+
+```
+
+To estimate the total causal impact of group size we need to condition on F. 
+
+```{r}
+
+f.fox.3 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + BF*F + BS*S, 
+  alpha ~ dnorm(0, 0.5), 
+  BF ~ dnorm(0, 0.5),
+  BS ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+mfox.3 = quap(flist = f.fox.3, data = d2)
+precis(mfox.3)
+
+```
+
+The remaining effect of food on weight is positive, after adjusting for the the effect group size. 
+
+
+```{r}
+# hold area constant 
+s.sim = c(-1,1)
+d.test = data.frame(A = mean(d2$A), S = c(-1,1))
+post.test <- link(mfox.3, data = d.test) 
+
+
+mu.mean <- apply( post.test , 2 , mean )
+mu.ci <- apply( post.test , 2 , PI ) 
+
+plot( W ~ S, data=d2 , type="n" ) 
+lines( s.sim , mu.mean ) 
+lines( s.sim , mu.ci[1,] , lty=2 ) 
+lines( s.sim , mu.ci[2,] , lty=2 )
+```
+
+Holding area constant, larger groups have lower weights prdicted by the model. 
+
+```{r}
+plot(d2$F, d2$A)
+```
+
+ Small groups with a large area and abundant food have are the ones with the highest predicted weights.
+ 
+
 
 

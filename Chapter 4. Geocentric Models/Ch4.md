@@ -1,4 +1,4 @@
-Chapter 4 Geocentric Models
+Chapter 4 Geocentric Models (linear regression)
 ================
 
 <!--   output: -->
@@ -50,10 +50,10 @@ distribution.
 runif(n = 16, min = -1, max = 1)
 ```
 
-    ##  [1]  0.03177819 -0.97236974 -0.50600502  0.93935782 -0.36289930
-    ##  [6] -0.80824030 -0.41889646 -0.93195651  0.82088338  0.12882153
-    ## [11] -0.71175503  0.69200586  0.70176222 -0.91795337  0.69111102
-    ## [16]  0.20843947
+    ##  [1] -0.16197898 -0.97520747  0.16590517  0.82674626 -0.65123626
+    ##  [6] -0.94780757 -0.48684143 -0.31403944  0.22617678 -0.82761854
+    ## [11]  0.66931168  0.75653910 -0.52561248  0.03735404  0.39906623
+    ## [16]  0.65710746
 
 ``` r
 # These are the individual steps. Then we add these steps together to get the position after 16 steps.
@@ -69,11 +69,11 @@ plot(density(pos))
 runif(n = 25 ,min = -10, max = 10)
 ```
 
-    ##  [1]  0.6010515 -6.3597820 -1.4470705 -4.6734559  9.2626884 -7.0183270
-    ##  [7] -4.2027882 -2.8148788  9.7984146  6.1074327 -1.6397132 -6.0504678
-    ## [13]  6.8325048 -0.4710959  5.3207918 -1.8735340 -2.0124293 -0.4840565
-    ## [19] -2.3146066 -1.4803993  9.7872664 -5.1053322  2.4531217 -3.5275748
-    ## [25] -5.8887588
+    ##  [1] -0.5963342  4.3393680  1.3950367  7.5819935 -3.6258292 -6.6562550
+    ##  [7] -0.9421627  7.1267013 -8.6590167 -5.3953797  7.4933544  4.3861701
+    ## [13]  8.4099582 -8.8671042  6.9898499  3.2232033  8.4947313 -1.6098762
+    ## [19] -7.8284025  7.2470129  9.8902643 -3.3912484  7.3113606 -5.9543720
+    ## [25] -5.2628204
 
 ``` r
 # sum of 25 numbers betweeen -1 and 1
@@ -290,7 +290,7 @@ curve(dunif(x, 0, 50), from=-10, to=60 , main = "sd")
 ### What do the priors imply about the possible distribution of individual heights ? Prior predictive simulation
 
 Priors for h mu and sigma imply a joint prior distribution for
-individual heights that can be samples from.
+individual heights that can be sampled from.
 
 ``` r
 # sample from the prior for individual heights 
@@ -351,7 +351,7 @@ could have produced the data d2$height.
 ``` r
 #constrict the grid. 
 n = 100
-d_grid = crossing(mu = seq(from = 140, to = 160, length.out = n), 
+d_grid = crossing(mu = seq(from = 140, to = 160,length.out = n), 
                   sigma = seq(from = 4, to = 9, length.out = n))
 
 glimpse(d_grid)
@@ -369,6 +369,10 @@ grid_function = function(mu, sigma) {
   dnorm(x = d2$height, mean = mu, sd = sigma, log = T) %>% sum()
 }
 
+
+# d_grid2 = d_grid %>% mutate(log.lik = purrr::map2(.x = mu, .y = sigma, .f = grid_function))
+# tester = unnest(d_grid2)
+# tester %>% head 
 d_grid_lk = 
   d_grid %>% 
   # map the likelihood function across each row combination of mu and sigma 
@@ -381,26 +385,7 @@ d_grid_lk =
   mutate(product = log_likelihood + prior_mu + prior_sigma) %>% 
   # standardize the probability 
   mutate(probability = exp(product - max(product)))
-
-
-d_grid_lk %>% head 
 ```
-
-    ## # A tibble: 6 x 7
-    ##      mu sigma log_likelihood prior_mu prior_sigma product probability
-    ##   <dbl> <dbl>          <dbl>    <dbl>       <dbl>   <dbl>       <dbl>
-    ## 1   140  4            -3768.    -5.72       -3.91  -3778.           0
-    ## 2   140  4.05         -3699.    -5.72       -3.91  -3708.           0
-    ## 3   140  4.10         -3632.    -5.72       -3.91  -3642.           0
-    ## 4   140  4.15         -3568.    -5.72       -3.91  -3578.           0
-    ## 5   140  4.20         -3506.    -5.72       -3.91  -3516.           0
-    ## 6   140  4.25         -3447.    -5.72       -3.91  -3456.           0
-
-``` r
-ggplot(d_grid_lk, aes(x = mu, y = probability)) + geom_point()
-```
-
-![](Ch4_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 d_grid_lk %>% 
@@ -413,14 +398,7 @@ d_grid_lk %>%
   theme(panel.grid = element_blank())
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
-
-``` r
-# rethniking
-image_xyz(x = d_grid_lk$mu, y = d_grid_lk$sigma, z = d_grid_lk$log_likelihood)
-```
-
-![](Ch4_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ### Sampling parameter values from the posterior
 
@@ -430,7 +408,7 @@ d_grid_samples <-
   sample_n(size = 1e4, replace = T, weight = probability)
 
 ggplot(d_grid_samples, aes(x = mu, y = sigma)) +
-  geom_bin2d() + 
+  geom_bin2d(bins = 30) +
   scale_fill_viridis_c()
 ```
 
@@ -682,18 +660,18 @@ curve(expr =  a[i] + b[i]*(x - xbar),
 
 ![](Ch4_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-This is a bad model – we expect htis bowtie shape because the
+This is a bad model – we expect this bowtie shape because the
 predictions should be tighter around the mean but the large prior on
 beta give ridiculous expected values-smaller than 0 and larger than the
 tallest human ever.
 
-We use domain knowledge to instead assume the logarithm of beta has a
+We use domain knowledge to instead assume *the logarithm of beta* has a
 normal distribution – this enforces a positive relationship assuming as
-belple get larger they get taller. If the logarithm of β is normal, it
+people get larger they get taller. If the logarithm of β is normal, it
 forces beta to be positive because exp(x) is greater than zero for any
 real number.
 
-With a more reasonable prior with rlnorm
+With a more reasonable prior for beta with rlnorm
 
 ``` r
 b <- rlnorm(1e4, 0, 1)
@@ -702,7 +680,7 @@ dens(b, xlim = c(0,5), adj=0.1)
 
 ![](Ch4_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
-Prior simulation
+Prior simulation simulate with r\[function\] random\[function\].
 
 ``` r
 set.seed(2971)
@@ -759,34 +737,14 @@ precis(m4.3)
     ## b       0.9047588 0.04260921   0.8366611   0.9728566
     ## sigma   5.1094015 0.19423143   4.7989821   5.4198208
 
-brm version
-
-``` r
-d2 <- d2 %>% mutate(weight_c = weight - mean(weight))
-
-b4.3b <- 
-  brm(data = d2, 
-      family = gaussian,
-      bf(height ~ a + exp(lb) * weight_c, 
-         a ~ 1,
-         lb ~ 1,
-         nl = TRUE),
-      prior = c(prior(normal(178, 20), class = b, nlpar = a),
-                prior(normal(0, 1), class = b, nlpar = lb),
-                prior(uniform(0, 50), class = sigma)),
-      iter = 31000, warmup = 30000, chains = 4, cores = 4,
-      seed = 4,
-      file = "fits/b04.03b")
-```
-
 interpretation for beta: for every 1kg heavier a person is expected to
 be 0.9 cm taller and 89% of the posterior probability blies between 0.84
 and 0.97.
 
-**it is most certainly not evidence that the relationship between weight
-and height is linear, because the model only considered lines. It just
-says that, if you are committed to a line, then lines with a slope
-around 0.9 are plausible ones.**
+**it is not evidence that the relationship between weight and height is
+linear, because the model only considered lines. It just says that, if
+you are committed to a line, then lines with a slope around 0.9 are
+plausible ones.**
 
 plot samples from the posterior
 
@@ -797,13 +755,13 @@ plot(NULL,
      )
 for (i in 1:nrow(sx)) { 
   curve(expr = sx$a[i] + sx$b[i]*(x-mean(d$weight)), 
-        col=col.alpha("black",alpha = 0.1) , add=TRUE,
+        col=col.alpha("black",alpha = 0.01) , add=TRUE,
         ylim = c(110,130) 
        )
 } 
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 Bowtie shape is because the prediction is better around the mean and
 improves with sample size.
@@ -814,11 +772,11 @@ on drawing 10,000 samples form the posterior.
 
 ``` r
 post <- extract.samples(m4.3) 
-mu_at_50 <- post$a + post$b * ( 50 - xbar )
+mu_at_50 <- post$a + post$b*( 50 - xbar )
 dens( mu_at_50 , col=rangi2 , lwd=2 , xlab="mu|weight=50" )
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 ``` r
 PI( mu_at_50 , prob=0.89 )
@@ -846,6 +804,17 @@ of interest.
 parameter of interest for each value of predictor  
 3\. plot lines and intervals
 
+Note:  
+a better name for ‘mu’ would be mu.posteriors because mu is a matrix.
+The matrix has a value for each value of the data we asked for a
+prediction. The number of rows, 1000 corresponds to the default `n`
+parameter in `link`. The columns returned by link are whatever we
+supplied to the data argument. They can be the original values for the
+observations in the data or a random sequence of observations as below.
+The data argument is converted to variables. The variables are values of
+weight, the values are Gaussians computed using the model based on the
+predictor.
+
 ``` r
 # define sequence of weights to compute predictions for
 # these values will be on the horizontal axis
@@ -853,7 +822,7 @@ weight.seq <- seq(from=25 , to=70, by=1)
 
 # use link to compute mu for each sample from posterior 
 # and for each weight in weight.seq 
-mu <- link(m4.3, data=data.frame(weight=weight.seq)) 
+mu <- link(m4.3, data = data.frame(weight=weight.seq)) 
 
 dim(mu); length(weight.seq)
 ```
@@ -863,10 +832,7 @@ dim(mu); length(weight.seq)
     ## [1] 46
 
 ``` r
-# I find it easier to see what is going on by adding colnames
-# the rows of data are converted to variables after link
-# the variables are values of weight, the values are Gaussians 
-# the point is to show that the uncertainty depends on the values of mu. 
+# show what the values are in the data `mu`
 colnames(mu) = weight.seq
 mu[1:10,1:10]
 ```
@@ -903,10 +869,10 @@ values.
 mu_long = as.data.frame(mu) %>% 
   gather(weight, distribution, colnames(mu)[1]:colnames(mu)[ncol(mu)])
 
-ggplot(mu_long, aes(x = weight, y = distribution)) + geom_violin() + theme_classic()
+ggplot(mu_long, aes(x = weight, y = distribution)) + geom_violin() + theme_bw()
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
 These are posterior probability distributions for expected values of the
 linear model of the **average** height µi at various values of weight.
@@ -933,7 +899,7 @@ shade(height.PI, weight.seq)
 shade(object = height.PI2, lim =  weight.seq, col = col.alpha("red", 0.3))
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ``` r
 ## 
@@ -993,7 +959,7 @@ p
 
     ## Warning: Removed 479 rows containing missing values (geom_point).
 
-![](Ch4_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 Get 15 evenly spaced dates across the data (again can use a package to
 do this in a more mptomized away)
@@ -1030,7 +996,7 @@ for ( i in 1:ncol(B) ){
 }
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 Now fit the model p 117. Di ∼ Normal(µi, σ) likelihood  
 µi = α + ∑ wkB(k,i) linear model  
@@ -1114,7 +1080,7 @@ plot( d2$year , d2$temp , col=col.alpha(rangi2,0.3) , pch=16 )
 shade( mu_PI , d2$year , col=col.alpha("black",0.5) )
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
 
 Matrix algebra note: matrix multiplication of the basis matrix B by the
 vector of parameters w: B %\*% w. This notation is just linear algebra
@@ -1122,10 +1088,11 @@ shorthand for (1) multiplying each element of the vector w by each value
 in the corresponding column of B and then (2) summing up each row of the
 result. So you end up with exactly what you need: A sum linear predictor
 for each year (row). Its the same math with little tricks to compress in
-a covenient
-    format.
+a covenient format.
 
 ``` r
+library(rethinking)
+
 mu <- a + B %*% w
 ```
 
@@ -1236,7 +1203,7 @@ height_sim = rnorm(n = 100, mean = mu, sd = sigma)
 dens(height_sim)
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
 4M2. Translate the model just above into a quap formula.
 
@@ -1322,7 +1289,7 @@ for (i in 1:N) {
 }
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
 
 Now using a log normal prior for beta:
 
@@ -1348,29 +1315,116 @@ for (i in 1:N) {
 }
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
 
 There are still some absurd values but there are less.
-
-Hard.
 
 4H1. The weights listed below were recorded in the \!Kung census, but
 heights were not recorded for these individuals. Provide predicted
 heights and 89% intervals for each of these individuals. That is, fill
 in the table below, using model-based predictions.
 
+``` r
+new.weight = c(46.95, 43.72, 64.78, 32.59, 54.63)
+
+data("Howell1")
+d = Howell1
+d = d[d$age > 18, ]
+
+# specify model 
+f1 = alist(
+  height ~ dnorm(mu, sigma),
+  mu <- a + Bw*weight,
+  a ~ dnorm(175, 20), # average height 
+  Bw ~ dlnorm(0,1), # prior for plausible effect which should be positive. 
+  sigma ~ dexp(1)
+)
+
+# fit model 
+m1 <- quap(flist = f1,data = d) 
+
+# use link to get prediction intervals for new weight 
+mu.posterior = link(fit = m1, data = list(weight = new.weight))
+
+# predict heights 
+height.predict = apply(mu.posterior, 2, median)
+
+# predict 89% compatibility interval 
+height.89 = apply(mu.posterior, 2, HPDI, 0.89 )
+
+# print result table 
+data.frame(new.weight, height.predict, height.89[1,], height.89[2])
+```
+
+    ##   new.weight height.predict height.89.1... height.89.2.
+    ## 1      46.95       156.3601       155.9597     156.8852
+    ## 2      43.72       153.4694       153.0393     156.8852
+    ## 3      64.78       172.2742       171.0836     156.8852
+    ## 4      32.59       143.5466       142.5424     156.8852
+    ## 5      54.63       163.2172       162.4948     156.8852
+
 4H2. Select out all the rows in the Howell1 data with ages below 18
 years of age. If you do it right, you should end up with a new data
 frame with 192 rows in it.
+
+``` r
+data("Howell1")
+d = Howell1
+d = d[d$age < 18, ]
+x_bar = mean(d$weight) 
+x_bar
+```
+
+    ## [1] 18.41419
+
+``` r
+# f3 = alist(
+#   height ~ dnorm(mu, sigma),
+#   mu <- a + Bw*(weight - x_bar),
+#   a ~ dnorm(20, 10), # estimate average height when weight is minim
+#   Bw ~ dlnorm(0,1), # prior for plausible effect which should be positive. 
+#   sigma ~ dunif(0, 50)
+# )
+# not as interpretable priors but working through the example .. 
+f3 = alist(
+  height ~ dnorm(mu, sigma),
+  mu <- a + Bw*weight,
+  a ~ dnorm(0, 10), # estimate average height when weight is 0
+  Bw ~ dlnorm(0,1), # prior for plausible effect which should be positive.
+  sigma ~ dunif(0, 50)
+)
+
+
+# fit model 
+m3 <- quap(flist = f3, data = d) 
+precis(m3)
+```
+
+    ##            mean         sd      5.5%     94.5%
+    ## a     57.174019 1.39018393 54.952237 59.395801
+    ## Bw     2.765924 0.06803665  2.657189  2.874660
+    ## sigma  8.449659 0.43245718  7.758509  9.140809
 
 1)  Fit a linear regression to these data, using quap. Present and
     interpret the estimates. For every 10 units of increase in weight,
     how much taller does the model predict a child gets?
 
+~ 20
+
 2)  Plot the raw data, with height on the vertical axis and weight on
     the horizontal axis. Superimpose the MAP regression line and 89%
     interval for the mean. Also superimpose the 89% interval for
     predicted heights.
+
+<!-- end list -->
+
+``` r
+post.m3 = extract.samples(m3)
+plot(height ~ weight, data = d )
+curve(mean(post.m3$a) + mean(post.m3$Bw)*x , add = TRUE) 
+```
+
+![](Ch4_files/figure-gfm/unnamed-chunk-51-1.png)<!-- -->
 
 3)  What aspects of the model fit concern you? Describe the kinds of
     assumptions you would change, if any, to improve the model. You
@@ -1383,6 +1437,50 @@ the practice problems just above. Your colleague exclaims, “That’s
 silly. Everyone knows that it’s only the logarithm of body weight that
 scales with height\!” Let’s take your colleague’s advice and see what
 happens.
+
+``` r
+min(d$age)
+```
+
+    ## [1] 0
+
+ok so there are also infants in the dataset which explains the really
+small values for weight. I cant think in cm and kg which isn’t helping.
+
+``` r
+data("Howell1")
+d = Howell1
+d = d[d$age < 18, ]
+d$logW = log(d$weight)
+
+f4 = alist(
+  height ~ dnorm(mu, sigma),
+  mu <- a + Bw*logW, 
+  a ~ dnorm(0, 10), # estimate average height when weight is 0 
+  Bw ~ dlnorm(0,1),
+  sigma ~ dunif(0, 50)
+)
+
+# fit model 
+m4 <- quap(flist = f4, data = d) 
+precis(m4)
+```
+
+    ##             mean        sd       5.5%     94.5%
+    ## a     -31.580330 1.8809913 -34.586517 -28.57414
+    ## Bw     50.086894 0.6630876  49.027152  51.14664
+    ## sigma   4.660209 0.2383512   4.279278   5.04114
+
+``` r
+# posterior for m4 
+pm4 = extract.samples(m4)
+beta = mean(pm4$Bw)
+intercept = mean(pm4$a)
+plot(height ~ logW, d)
+curve(mean(pm4$a) + mean(pm4$Bw)*x , add = TRUE) 
+```
+
+![](Ch4_files/figure-gfm/unnamed-chunk-54-1.png)<!-- -->
 
 1)  Model the relationship between height (cm) and the natural logarithm
     of weight (log-kg). Use the entire Howell1 data frame, all 544 rows,
@@ -1399,26 +1497,132 @@ where h i is the height of individual i and w i is the weight (in kg) of
 individual i. The function for computing a natural log in R is just log.
 Can you interpret the resulting estimates?
 
-2)  Begin with this plot:
+Im going to compare to the linear model (now again using all the data
+not just adults / kids) and use the information criteria to compare the
+models. Also using all data here.
+
+``` r
+data("Howell1")
+d = Howell1
+
+f5 = alist(
+  height ~ dnorm(mu, sigma), 
+  mu <- a + bW*weight, 
+  a ~ dnorm(178, 20), 
+  bW ~ dlnorm(0, 1), 
+  sigma ~ dunif(0, 50 )
+)
+
+f6 = alist(
+  height ~ dnorm(mu, sigma), 
+  mu <- a + bW*log(weight), 
+  a ~ dnorm(178, 20), 
+  bW ~ dlnorm(0, 1), 
+  sigma ~ dunif(0, 50 )
+)
+
+m5 = quap(flist = f5, data = d)
+m6 = quap(flist = f6, data = d)
+
+compare(m4, m5)
+```
+
+    ## Warning in compare(m4, m5): Different numbers of observations found for at least two models.
+    ## Model comparison is valid only for models fit to exactly the same observations.
+    ## Number of observations for each model:
+    ## m4 192 
+    ## m5 544
+
+    ## Warning in ic_ptw1 - ic_ptw2: longer object length is not a multiple of
+    ## shorter object length
+
+    ##        WAIC       SE    dWAIC      dSE    pWAIC weight
+    ## m4 1142.697 23.60736    0.000       NA 3.680827      1
+    ## m5 3982.634 34.91371 2839.938 31.97762 4.037961      0
+
+``` r
+plot(compare(m4, m5))
+```
+
+    ## Warning in compare(m4, m5): Different numbers of observations found for at least two models.
+    ## Model comparison is valid only for models fit to exactly the same observations.
+    ## Number of observations for each model:
+    ## m4 192 
+    ## m5 544
+    
+    ## Warning in compare(m4, m5): longer object length is not a multiple of shorter object length
+
+![](Ch4_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
+
+Model 5 gets all the weight and has a much lower deviance (-2\*lppd)
+indicating a better fit.
+
+2)  Begin with this plot: Then use samples from the quadratic
+    approximate posterior of the model in (a) to superimpose on the
+    plot: (1) the predicted mean height as a function of weight, (2) the
+    97% interval for the mean, and (3) the 97% interval for predicted
+    heights.
 
 <!-- end list -->
 
 ``` r
-plot( height ~ weight , data=Howell1 , col=col.alpha(rangi2,0.4) )
+# m5 
+weight.seq = seq(min(d$weight), max(d$weight))
+m5.post = link(m5, data = list(weight = weight.seq))
+height.estimates = apply(m5.post, 2, mean)
+line.PI = apply(m5.post, 2, PI, prob = 0.89)
+sim.height = sim(m5, data = list(weight = weight.seq))
+height.PI = apply(sim.height, 2, PI, prob = 0.89)
+
+
+# m6 
+m6.post = link(m6, data = list(weight = weight.seq))
+height.estimates.2 = apply(m6.post, 2, mean)
+line.PI.2 = apply(m6.post, 2, PI, prob = 0.89)
+sim.height.2 = sim(m6, data = list(weight = weight.seq))
+height.PI.2 = apply(sim.height.2, 2, PI, prob = 0.89)
+
+
+plot( height ~ weight , data=Howell1 , col=col.alpha(rangi2,0.9),
+      main ='h~N(mu,sigma) blue: mu = a + bW*W , red: mu = a + bW*log(W), ' )
+lines(weight.seq, height.estimates)
+shade(line.PI, weight.seq, col = 'blue')
+shade(height.PI,weight.seq, col = col.alpha('blue', alpha = 0.2))
+shade(line.PI.2, weight.seq, col = 'red')
+shade(height.PI.2,weight.seq,col = col.alpha('red', alpha = 0.5))
 ```
 
-![](Ch4_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
+![](Ch4_files/figure-gfm/unnamed-chunk-56-1.png)<!-- -->
 
-Then use samples from the quadratic approximate posterior of the model
-in (a) to superimpose on the plot: (1) the predicted mean height as a
-function of weight, (2) the 97% interval for the mean, and (3) the 97%
-interval for predicted heights.
+The model with the log realtionship is another way of expressing the log
+transformation of the outcome variable.
 
-4H4. Plot the prior predictive distribution for the polynomial
-regression model in the chapter. You can modify the code that plots the
-linear regression prior predictive distribution. Can you modify the
-prior distributions of α, β 1 , and β 2 so that the prior predictions
-stay within the biologically reasonable outcome space? That is to say:
-Do not try to fit the data by hand. But do try to keep the curves
-consistent with what you know about height and weight, before seeing
-these exact data.
+``` r
+d = Howell1
+d$logW = log(d$weight)
+
+f7 = alist(
+  height ~ dnorm(mu, sigma),
+  mu <- a + Bw*logW, 
+  a ~ dnorm(0, 10), # estimate average height when weight is 0 
+  Bw ~ dlnorm(0,1),
+  sigma ~ dunif(0, 50)
+)
+m7 = quap(flist = f7, data = d)
+
+precis(m7)
+```
+
+    ##             mean        sd       5.5%      94.5%
+    ## a     -23.354081 1.3241014 -25.470250 -21.237911
+    ## Bw     46.953376 0.3794799  46.346894  47.559859
+    ## sigma   5.135287 0.1557208   4.886415   5.384159
+
+``` r
+precis(m6)
+```
+
+    ##             mean        sd       5.5%      94.5%
+    ## a     -22.874319 1.3342911 -25.006774 -20.741864
+    ## bW     46.817791 0.3823240  46.206763  47.428818
+    ## sigma   5.137088 0.1558847   4.887954   5.386222
