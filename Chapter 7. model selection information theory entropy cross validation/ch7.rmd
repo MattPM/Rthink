@@ -797,11 +797,6 @@ lapply(islands, calc_entropy)
 
 ```
 
-manually: 
-```{r}
--sum(i1 * log(i1))
-```
-
 
 The island where there would be the least reduction in uncertainty if we learned an outcome is the first island it has the highest entropy, the probability distribution of species in the first island is uniform. The entropy is lowest for the island which has a single species dominating the bird population. 
 
@@ -846,10 +841,146 @@ sum( i2*log( i2/i1 ) )
 
 ```
 
+7h4  
+the simulation -- happiness is uniform, age does not influence happiness, but H -> M (increases probability of m) and A->M.  
+The point from ch 6 was that H -> M <- A is a collider. When we condition on a collider, we induce a spurrious association between both causes (H and A) of the collider variable (M).
+```{r}
+
+## R code 6.21
+d <- sim_happiness( seed=1977 , N_years=1000 )
+d2 <- d[ d$age>17 , ] # only adults
+d2$A <- ( d2$age - 18 ) / ( 65 - 18 )
+# multiple regresion model 
+d2$mid <- d2$married + 1
+
+# mid 2 = married mid 1 = unmarried 
+
+m6.9 <- quap(
+    alist(
+        happiness ~ dnorm( mu , sigma ),
+        mu <- a[mid] + bA*A,
+        a[mid] ~ dnorm( 0 , 1 ),
+        bA ~ dnorm( 0 , 2 ),
+        sigma ~ dexp(1)
+    ) , data=d2 )
+
+# only including age not marriage status 
+## R code 6.24
+m6.10 <- quap(
+    alist(
+        happiness ~ dnorm( mu , sigma ),
+        mu <- a + bA*A,
+        a ~ dnorm( 0 , 1 ),
+        bA ~ dnorm( 0 , 2 ),
+        sigma ~ dexp(1)
+    ) , data=d2 )
+plot(precis(m6.9, depth = 2), main = 'm6.9 collider bias')
+plot(precis(m6.10), main = 'm6.10 structurally correct causal model')
+```
 
 
+Compare the two models based on information criteria: 
+
+The model that is incorrect and contains the collider is better for prediction. the additional information wihtin marriage index reduces the log likelihoodfo each observation sufficiently to get all of the weight, however this information is not structurally related to how the variables interact. Prediction and causal inference are different.  
+
+```{r}
+compare(m6.9, m6.10)
+```
+
+7H5  
+FOXES ATE LIKE STREET GANGS my favorite datast 
+
+data  
+```{r}
+data("foxes")
+d = foxes
+d$S = d$groupsize = standardize(d$groupsize)
+d$F = standardize(d$avgfood)
+d$A = standardize(d$area)
+d$W = standardize(d$weight)
+
+d2 = d[ ,c('S','F','A','W')]
+pairs(d2, col = rangi2)
+```
 
 
+```{r}
+f1 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + (BF*F) + (BS*S) + (BA*A) , 
+  alpha ~ dnorm(0, 0.5), 
+  
+  BF ~ dnorm(0, 0.5),
+  BS ~ dnorm(0, 0.5),
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
 
+f2 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + (BF*F) + (BS*S) ,
+  alpha ~ dnorm(0, 0.5), 
+  BF ~ dnorm(0, 0.5),
+  BS ~ dnorm(0, 0.5),
+  
+  sigma ~ dexp(1)
+)
+
+f3 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + + (BS*S) + (BA*A) , 
+  alpha ~ dnorm(0, 0.5), 
+  BS ~ dnorm(0, 0.5),
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+f4 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + BF*F,  
+  alpha ~ dnorm(0, 0.5), 
+  BF ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+f5 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + BA*A,  
+  alpha ~ dnorm(0, 0.5), 
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+# fit models 
+m1 = quap(flist = f1, data = d2) # W ~ F + S + A 
+m2 = quap(flist = f2, data = d2) # W ~ F + S 
+m3 = quap(flist = f3, data = d2) # W ~ S + A 
+m4 = quap(flist = f4, data = d2) # W ~ F
+m5 = quap(flist = f5, data = d2) # W ~ A
+
+# calculate information criterion for each model 
+comp = compare(m1,m2,m3,m4,m5)
+
+comp
+```
+
+the dSEs are relatively large compared to the dWAIC for the single variable regression models, indicating they are quite worse for prediction compared to the most hihgly parameterized 2 models.  The weight is shared by m1 2 and 3 fairly equally, in the last chapter the fits for M2, W ~ F + S helped get at the causal structure; The remaining effect of food on weight was positive, after adjusting for the the effect group size. This explains the relatively high weight or the model since it learns the additive information about the effet of food on weight conditioned on group size. the model containing area also adds another layer of total area -- the total area available also has some predictive (as seen by the highest WAIC score for m1) and causal (dag below) information about weight. 
+
+DAG  
+```{r}
+suppressMessages(library(dagitty))
+set.seed(23)
+foxdag = dagitty(
+"dag{
+A -> F -> W
+F -> S
+F -> W <- S
+}")
+drawdag(foxdag)
+```
+
+```{r}
+lapply(list(m1,m2, m3, m4, m5), precis)
+```
 
 

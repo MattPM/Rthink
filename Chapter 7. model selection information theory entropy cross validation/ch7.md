@@ -254,7 +254,7 @@ mean(post$mass_std)
 mean(extract.samples(m7.1)[[2]])
 ```
 
-    ## [1] 0.1671043
+    ## [1] 0.1671045
 
 Now we compare a contrived example where we have 7 data points and we
 fit a 1 to 7 parameter model, exactly fitting the data with parameters.
@@ -459,8 +459,8 @@ f <- function(i){
 (lppd <- sapply(1:n, f))
 ```
 
-    ## [1]  0.6098668  0.6483438  0.5496093  0.6234933  0.4648143  0.4347604
-    ## [7] -0.8444630
+    ## [1]  0.6098668  0.6483431  0.5496066  0.6234936  0.4648150  0.4347606
+    ## [7] -0.8444663
 
 **Deviance** is the lppd (the total score) multiplied by -2. The 2 is
 used because in non-bayesian stats, the difference in 2 distributions
@@ -473,7 +473,7 @@ so the devaince is:
 -2*sum(lppd_m7.1)
 ```
 
-    ## [1] -4.97285
+    ## [1] -4.972839
 
 Just remember *deviance* is the score \* -2 so that models that
 ‘deviate’ *less* are better.
@@ -487,7 +487,7 @@ set.seed(1)
 sapply( list(m7.1,m7.2,m7.3,m7.4,m7.5,m7.6) , function(m) sum(lppd(m)) )
 ```
 
-    ## [1]  2.490390  2.565987  3.707340  5.333706 14.108014 39.445390
+    ## [1]  2.490385  2.565987  3.707340  5.333706 14.108014 39.445390
 
 Simulating models to simulate training and test errors to produce plots
 in fig 7.6.
@@ -1133,3 +1133,306 @@ plot(m1.psis$penalty)
 ```
 
 ![](ch7_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+
+7.3h  
+There are 3 islands with birb populations observed in the following
+frequencies. Calculate entropy of each island.
+
+``` r
+islands = list(
+  i1  = c(0.2, 0.2, 0.2, 0.2, 0.2),
+  i2 = c(0.8, 0.1, 0.05, 0.025, 0.025),
+  i3 = c(0.05, 0.15, 0.7, 0.05, 0.05, 0.05)
+)
+
+lapply(islands, calc_entropy)
+```
+
+    ## $i1
+    ## [1] 1.609438
+    ## 
+    ## $i2
+    ## [1] 0.7430039
+    ## 
+    ## $i3
+    ## [1] 1.133387
+
+The island where there would be the least reduction in uncertainty if we
+learned an outcome is the first island it has the highest entropy, the
+probability distribution of species in the first island is uniform. The
+entropy is lowest for the island which has a single species dominating
+the bird population.
+
+Comparing calculating the kl divergence of predicting the proportion of
+birds on island 2 using the pbserved proportion on island 1, then
+approximating hte proportion of birds on island 1 using the observed
+proportion on island 2. KL divergence tells us what is the uncertainty
+difference when we use the distribution of birds on one island to
+approximate the proportion of birds on another?
+
+*Note I made errors in this initially - the divergence is the
+difference; it does not have a negative sign like entropy*
+
+``` r
+i1  = c(0.2, 0.2, 0.2, 0.2, 0.2)
+i2 = c(0.8, 0.1, 0.05, 0.025, 0.025)
+i3 = c(0.05, 0.15, 0.7, 0.05, 0.05, 0.05)
+
+# KL-divergence of predicting island 1 with island 2 
+sum(i1 * log(i1 / i2))
+```
+
+    ## [1] 0.9704061
+
+^ This is the uncertainty that arises when we estimate the high entropy
+island (i1) with the distribution in the low entropy island (i2).
+
+``` r
+# KL divergence of predicting island 2 with island 1 
+sum(i2 * log(i2 / i1))
+```
+
+    ## [1] 0.866434
+
+^ This is uncertainty arising when we predict the high entropy island
+(i1) with the low entropy island (i2).
+
+There is more uncertainty that is introduced when we predict the high
+entropy distribution using a lower entropy distribution. This is an
+extension of the rain in abu dabi example. If the probability
+distribution is very skewed or there are less possible things to predict
+then the cross entropy (p / q) will be higher than if we have a lot of
+uncertainty in the reference distribution
+
+``` r
+i1  = c(0.99, 0.01) # low entropy 
+i2 = c(0.5, 0.5) # high entropy
+
+# KL divergence predicting i1 using i2
+sum(i1*log(i1 / i2))
+```
+
+    ## [1] 0.6371456
+
+``` r
+# KL divergence predicting i2 using i1 
+sum( i2*log( i2/i1 ) )
+```
+
+    ## [1] 1.614463
+
+7h4  
+the simulation – happiness is uniform, age does not influence happiness,
+but H -\> M (increases probability of m) and A-\>M.  
+The point from ch 6 was that H -\> M \<- A is a collider. When we
+condition on a collider, we induce a spurrious association between both
+causes (H and A) of the collider variable (M).
+
+``` r
+## R code 6.21
+d <- sim_happiness( seed=1977 , N_years=1000 )
+d2 <- d[ d$age>17 , ] # only adults
+d2$A <- ( d2$age - 18 ) / ( 65 - 18 )
+# multiple regresion model 
+d2$mid <- d2$married + 1
+
+# mid 2 = married mid 1 = unmarried 
+
+m6.9 <- quap(
+    alist(
+        happiness ~ dnorm( mu , sigma ),
+        mu <- a[mid] + bA*A,
+        a[mid] ~ dnorm( 0 , 1 ),
+        bA ~ dnorm( 0 , 2 ),
+        sigma ~ dexp(1)
+    ) , data=d2 )
+
+# only including age not marriage status 
+## R code 6.24
+m6.10 <- quap(
+    alist(
+        happiness ~ dnorm( mu , sigma ),
+        mu <- a + bA*A,
+        a ~ dnorm( 0 , 1 ),
+        bA ~ dnorm( 0 , 2 ),
+        sigma ~ dexp(1)
+    ) , data=d2 )
+plot(precis(m6.9, depth = 2), main = 'm6.9 collider bias')
+```
+
+![](ch7_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+
+``` r
+plot(precis(m6.10), main = 'm6.10 structurally correct causal model')
+```
+
+![](ch7_files/figure-gfm/unnamed-chunk-43-2.png)<!-- -->
+
+Compare the two models based on information criteria:
+
+The model that is incorrect and contains the collider is better for
+prediction. the additional information wihtin marriage index reduces the
+log likelihoodfo each observation sufficiently to get all of the weight,
+however this information is not structurally related to how the
+variables interact. Prediction and causal inference are different.
+
+``` r
+compare(m6.9, m6.10)
+```
+
+    ##           WAIC       SE    dWAIC      dSE    pWAIC       weight
+    ## m6.9  2713.971 37.54465   0.0000       NA 3.738532 1.000000e+00
+    ## m6.10 3101.906 27.74379 387.9347 35.40032 2.340445 5.768312e-85
+
+7H5  
+FOXES ATE LIKE STREET GANGS my favorite datast
+
+data
+
+``` r
+data("foxes")
+d = foxes
+d$S = d$groupsize = standardize(d$groupsize)
+d$F = standardize(d$avgfood)
+d$A = standardize(d$area)
+d$W = standardize(d$weight)
+
+d2 = d[ ,c('S','F','A','W')]
+pairs(d2, col = rangi2)
+```
+
+![](ch7_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+
+``` r
+f1 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + (BF*F) + (BS*S) + (BA*A) , 
+  alpha ~ dnorm(0, 0.5), 
+  
+  BF ~ dnorm(0, 0.5),
+  BS ~ dnorm(0, 0.5),
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+f2 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + (BF*F) + (BS*S) ,
+  alpha ~ dnorm(0, 0.5), 
+  BF ~ dnorm(0, 0.5),
+  BS ~ dnorm(0, 0.5),
+  
+  sigma ~ dexp(1)
+)
+
+f3 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + + (BS*S) + (BA*A) , 
+  alpha ~ dnorm(0, 0.5), 
+  BS ~ dnorm(0, 0.5),
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+f4 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + BF*F,  
+  alpha ~ dnorm(0, 0.5), 
+  BF ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+f5 = alist(
+  W ~ dnorm(mu,sigma), 
+  mu <- alpha + BA*A,  
+  alpha ~ dnorm(0, 0.5), 
+  BA ~ dnorm(0, 0.5),
+  sigma ~ dexp(1)
+)
+
+# fit models 
+m1 = quap(flist = f1, data = d2) # W ~ F + S + A 
+m2 = quap(flist = f2, data = d2) # W ~ F + S 
+m3 = quap(flist = f3, data = d2) # W ~ S + A 
+m4 = quap(flist = f4, data = d2) # W ~ F
+m5 = quap(flist = f5, data = d2) # W ~ A
+
+# calculate information criterion for each model 
+comp = compare(m1,m2,m3,m4,m5)
+
+comp
+```
+
+    ##        WAIC       SE     dWAIC      dSE    pWAIC      weight
+    ## m1 323.1599 16.29671  0.000000       NA 4.792986 0.463482206
+    ## m3 324.1801 15.70167  1.020166 2.902071 3.857939 0.278295866
+    ## m2 324.3638 16.14017  1.203924 3.598184 3.961315 0.253865866
+    ## m4 333.7436 13.80792 10.583656 7.200937 2.575864 0.002332499
+    ## m5 334.0277 13.81197 10.867817 7.250087 2.802232 0.002023563
+
+the dSEs are relatively large compared to the dWAIC for the single
+variable regression models, indicating they are quite worse for
+prediction compared to the most hihgly parameterized 2 models. The
+weight is shared by m1 2 and 3 fairly equally, in the last chapter the
+fits for M2, W ~ F + S helped get at the causal structure; The remaining
+effect of food on weight was positive, after adjusting for the the
+effect group size. This explains the relatively high weight or the model
+since it learns the additive information about the effet of food on
+weight conditioned on group size. the model containing area also adds
+another layer of total area – the total area available also has some
+predictive (as seen by the highest WAIC score for m1) and causal (dag
+below) information about weight.
+
+DAG
+
+``` r
+suppressMessages(library(dagitty))
+set.seed(23)
+foxdag = dagitty(
+"dag{
+A -> F -> W
+F -> S
+F -> W <- S
+}")
+drawdag(foxdag)
+```
+
+![](ch7_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
+
+``` r
+lapply(list(m1,m2, m3, m4, m5), precis)
+```
+
+    ## [[1]]
+    ##                mean         sd         5.5%      94.5%
+    ## alpha -2.066150e-07 0.08519598 -0.136159844  0.1361594
+    ## BF     2.969022e-01 0.20960024 -0.038079455  0.6318839
+    ## BS    -6.396216e-01 0.18161483 -0.929877171 -0.3493660
+    ## BA     2.782355e-01 0.17011230  0.006363222  0.5501078
+    ## sigma  9.312065e-01 0.06100011  0.833716504  1.0286964
+    ## 
+    ## [[2]]
+    ##                mean         sd       5.5%      94.5%
+    ## alpha -3.040204e-07 0.08615793 -0.1376973  0.1376967
+    ## BF     4.772501e-01 0.17912276  0.1909774  0.7635229
+    ## BS    -5.735204e-01 0.17914128 -0.8598228 -0.2872180
+    ## sigma  9.420406e-01 0.06175201  0.8433490  1.0407323
+    ## 
+    ## [[3]]
+    ##                mean         sd       5.5%      94.5%
+    ## alpha -2.567869e-06 0.08614952 -0.1376861  0.1376810
+    ## BS    -4.819963e-01 0.14537267 -0.7143299 -0.2496627
+    ## BA     4.058418e-01 0.14536270  0.1735242  0.6381595
+    ## sigma  9.419458e-01 0.06159413  0.8435065  1.0403851
+    ## 
+    ## [[4]]
+    ##                mean         sd       5.5%     94.5%
+    ## alpha -1.036679e-09 0.09050465 -0.1446439 0.1446439
+    ## BF    -2.421169e-02 0.09088441 -0.1694625 0.1210392
+    ## sigma  9.911371e-01 0.06465747  0.8878020 1.0944723
+    ## 
+    ## [[5]]
+    ##                mean         sd       5.5%     94.5%
+    ## alpha -3.998786e-08 0.09051605 -0.1446622 0.1446621
+    ## BA     1.883377e-02 0.09089583 -0.1264353 0.1641029
+    ## sigma  9.912662e-01 0.06466650  0.8879166 1.0946157
