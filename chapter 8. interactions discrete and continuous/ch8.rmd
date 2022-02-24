@@ -471,33 +471,160 @@ Easy.
 education * industry person works in.  
 
 (3) Gasoline makes a car go.  
-gasouline + engine displacement.  
+gas * engine displacement.  
 
 8E2  
 Not really clear what is meant here by "invokes an interaction"  
-If it means the specific language of the statement is equivalent to an interaction some are not interactions but for example the political one : spectrum ~ family + friend + family*friends could be a reasonable model as in 
+If it means the specific language of the statement is equivalent to an interaction some are not interactions.
 
-(1) Caramelizing onions requires cooking over low heat and making sure the onions do not dry out.
+8E3. For each of the explanations in 8E2, write a linear model that expresses the stated relationship.
 
-(2) A car will go faster when it has more cylinders or when it has a better fuel injector.
+For the onion relationship
+```{r, eval=FALSE}
+µi = a + BhxH + BwW + Bwh*W*H
+```
 
-but it will go even faster with increases in both.  
 
-(3) Most people acquire their political beliefs from their parents, unless they get them instead from their friends.  
-the instead implies less of an interaction but could also see it as spectrum ~ family + friend + family*friends  
 
-(4) Intelligent animal species tend to be either highly social or have manipulative appendages (hands, tentacles, etc.).
+8M1. Tulip example -- add temperature variable - two levels: cold and hot and assume none grew under T = hot -- explain in terms of interactions.  
 
-8E3. For each of the explanations in 8E2, write a linear model that expresses the stated relationship. Medium.
+B is impacted by W conditional on presence of light and W has an effect conditional on T; if T is very hot than in prioncipal the moisture in the soil might evaporate? It's an interaction because it made all blooms 0 instead of having an additive effect on blooms.  
 
-8M1. Recall the tulips example from the chapter. Suppose another set of treatments adjusted the temperature in the greenhouse over two levels: cold and hot. The data in the chapter were collected at the cold temperature. You find none of the plants grown under the hot temperature developed any blooms at all, regardless of the water and shade levels. Can you explain this result in terms of interactions between water, shade, and temperature?
+8M2. Make a regression model that says bloom = 0 if temperature is hot  
 
-8M2. Can you invent a regression equation that would make the bloom size zero, whenever the temperature is hot?
+assign T = 1 is hot T = 2 is cold  
 
-8M3. In parts of North America, ravens depend upon wolves for their food. This is because ravens are carnivorous but cannot usually kill or open carcasses of prey. Wolves however can and do kill and tear open animals, and they tolerate ravens co-feeding at their kills. This species relationship is generally described as a “species interaction.” Can you invent a hypothetical set of data on raven population size in which this relationship would manifest as a statistical interaction? Do you think the biological interaction could be linear? Why or why not?
+B ~ N(mu, alpha)  
+mu[i] = a[T - 1] + BwW + BSs + Bws(W*S)  
 
-Hard.
 
-8H1. Return to the data(tulips) example in the chapter. Now include the bed variable as a predictor in the interaction model. Don’t interact bed with the other predictors; just include it as a main effect. Note that bed is categorical. So to use it properly, you will need to either construct dummy variables or rather an index variable, as explained in Chapter 6.
 
-8H2. Use WAIC to compare the model from 8H1 to a model that omits bed. What do you infer from this comparison? Can you reconcile the WAIC results with the posterior distribution of the bed coefficients?
+8M3. Invent a dataset capturing raven population size (ravens are scavengers) depending on wolves (carnivore) for food assuming wolves tolerate raven population as 'species interaction'. Would it be linear biologically; no bc of carrying capacity and other species factors. 
+
+Need to capture correlation in the population and also that wolf independent on Raven  
+Not really a statistical interaction.   
+```{r}
+wolf = c(20, 30, 40, 50, 60, 70, 80, 200, 300, 400)
+raven = c(22, 33, 44, 55, 66, 77, 80, 80, 85, 50)
+plot(wolf, raven)
+```
+
+
+8H1  
+tulips data -- Include bed variable as a predictor in the interaction model. Don’t interact bed with the other predictors; just include it as a main effect. Note that bed is categorical. 
+
+```{r}
+library(rethinking)
+data(tulips)
+d <- tulips
+
+# standardize variables 
+## R code 8.20
+d$B <- d$blooms / max(d$blooms)
+d$W <- d$water - mean(d$water)
+d$S <- d$shade - mean(d$shade)
+d$bedID = as.numeric(d$bed)
+pairs(d[ ,c('B', 'W', 'S', 'bedID')], col = rangi2)
+
+```
+
+
+```{r}
+
+fbed = alist(
+    B ~ dnorm( mu , sigma ) ,
+    mu <- a[bedID] + Bw*W + Bs*S + Bws*W*S ,
+    a[bedID] ~ dnorm( 0.5 , 0.25 ) ,
+    Bw ~ dnorm( 0 , 0.25 ) ,
+    Bs ~ dnorm( 0 , 0.25 ) ,
+    Bws ~ dnorm( 0 , 0.25 ) ,
+    sigma ~ dexp( 1 )
+)
+mbed <- quap( fbed , data=d )
+plot(precis(mbed, depth = 3))
+```
+
+
+Bed 1 did a litle worse. 
+
+8.2H  
+
+```{r}
+compare(m8.5,mbed)
+```
+
+The difference in the models is really modest, bed had little effect. 
+
+
+
+8H3  
+using the terrain ruggedness dataset evaluate impact of the outlier country seychelles on the inference.
+
+```{r}
+data(rugged)
+d <- rugged
+
+# make log version of outcome
+d$log_gdp <- log( d$rgdppc_2000 )
+
+# extract countries with GDP data
+dd <- d[ complete.cases(d$rgdppc_2000) , ]
+
+# rescale variables
+dd$G <- dd$log_gdp / mean(dd$log_gdp)
+dd$R <- dd$rugged / max(dd$rugged)
+dd$A <- dd$cont_africa + 1 
+
+R.mean = mean(dd$R)
+
+# specify interaction model 
+f8.3 = alist(
+    G ~ dnorm(mu, sigma), 
+    mu <- a[A] + B[A]*(R - R.mean), 
+    a[A] ~ dnorm(0, 0.1), 
+    B[A] ~ dnorm(0,0.3), 
+    sigma ~ dexp(1)
+    )
+
+m8.3 <- quap(flist = f8.3, data=dd)
+
+psis.8.3 = PSIS(m8.3,pointwise = TRUE)
+d2 = cbind(psis.8.3, dd)
+ggplot(d2, aes(x = lppd, y = penalty, color = as.factor(A))) + geom_point() + ylim(0,1)
+
+```
+
+
+now with a student t distribution 
+
+```{r}
+f8.3.1 = alist(
+    G ~ dstudent(2, mu, sigma), 
+    mu <- a[A] + B[A]*(R - R.mean), 
+    a[A] ~ dnorm(0, 0.1), 
+    B[A] ~ dnorm(0,0.3), 
+    sigma ~ dexp(1)
+    )
+
+m8.3.1 <- quap(flist = f8.3.1, data=dd)
+
+psis.8.3.1 = PSIS(m8.3.1,pointwise = TRUE)
+d3 = cbind(psis.8.3.1, dd)
+ggplot(d3, aes(x = lppd, y = penalty, color = as.factor(A))) + geom_point() + ylim(0,1)
+
+```
+
+The predictive ability of the robust regression model is improved while the coefficients remain largely the same: 
+
+```{r}
+plot(compare(m8.3, m8.3.1))
+```
+
+
+
+```{r}
+par(mfrow = c(1,2))
+plot(precis(m8.3, depth = 2))
+plot(precis(m8.3.1, depth = 2))
+```
+
