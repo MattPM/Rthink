@@ -3,38 +3,87 @@ title: 'Chapter 9 Markov Chain Monte Carlo'
 output: github_document
 ---
 
+### understanding the metropolis / Rosenbluth algorithm with Markov Chain simulation
+
+This is a special case of the metropolis algorithm.  
+
 ```{r}
+library(rethinking)
+r = rangi2
+set.seed(1990)
 ## R code 9.1
-num_weeks <- 1e5
+num_weeks <- 1e3
 positions <- rep(0,num_weeks)
+# start at the biggest island, island 10. 
 current <- 10
 for ( i in 1:num_weeks ) {
-  ## record current position
+  
+    ## record current position
     positions[i] <- current
-  ## flip coin to generate proposal
+    ## flip coin to generate proposal (left or right)
     proposal <- current + sample( c(-1,1) , size=1 )
-  ## now make sure he loops around the archipelago
+    # this part just ensures he goes in a circle. 
+    ## now make sure he loops around the archipelago
     if ( proposal < 1 ) proposal <- 10
     if ( proposal > 10 ) proposal <- 1
-  ## move?
+    
+    # This part is the meat of it 
+    ## move?
+    # e.g. if proposal= 8, current= 9 ; prob = 0.88 
+    # if proposal = 9 current = 8, then 'prob' = 1.25
     prob_move <- proposal/current
+    
+    # if proposal bigger than current, he always moves because prob_move is > 1 
+    # if proposal is smaller then if a random uniform sample bound 0,1 is less than 
+    # prob_move, then he moves -- he moves in proportion to the prob_move
+    # we thus update current to take the value of the new island. 
     current <- ifelse( runif(1) < prob_move , proposal , current )
+    #print(current)
 }
 
 ## R code 9.2
-plot( 1:100 , positions[1:100] )
+par(mfrow=c(1,2))
+plot( 1:400 , positions[1:400] , col = r) 
+plot(table(positions), col = r) 
+```
 
-## R code 9.3
-plot( table( positions ) )
+The metropolis is the "grandparent" of other strategies 
+
+### Gibbs sampling
+
+samplers use distributions of conjugate pairs of and likeliooods.  
+conjugate pairs have analytic solutions for posterior distribution of an individual parameter.  
+
+### issue wit hgibbs sampling
+
+issue- correlations in parameter values form narrow valleys. metropolis and gibbs get stuck because they dont know enought about the shape of the distribution (the posterior).
+
+**concentration of measure** 
+
+
+```{r}
 
 ## R code 9.4
+D1 = 1
 D <- 10
 T <- 1e3
-Y <- rmvnorm(T,rep(0,D),diag(D))
+Y1 <- rmvnorm(n = T,mean = rep(0,D1), sigma = diag(D1))
+Y <- rmvnorm(n = T,mean = rep(0,D), sigma = diag(D))
 rad_dist <- function( Y ) sqrt( sum(Y^2) )
-Rd <- sapply( 1:T , function(i) rad_dist( Y[i,] ) )
-dens( Rd )
 
+Rd1 = sapply( 1:T , function(i) rad_dist( Y1[i,] ) )
+Rd <- sapply( 1:T , function(i) rad_dist( Y[i,] ) )
+par(mfrow = c(2,1))
+dens( Rd1 , col = r,
+      main =  'N(0,1) normal dist. \n radial distance from mode of probability mass')
+dens( Rd , col = r,
+      main = 'N[k = 10](0,1) multiariate normal \nradial distance from mode of probability mass')
+```
+
+this keeps happening as you add more dimensions. With 10 dimensions you're far from the mode of robability mass.  
+**the sampled points are in a thin high dimensional shell far from the mode**  
+
+```{r}
 ## R code 9.5
 # U needs to return neg-log-probability
 U <- function( q , a=0 , b=1 , k=0 , d=1 ) {
