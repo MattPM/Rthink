@@ -5,7 +5,9 @@ output: github_document
 
 ### understanding the metropolis / Rosenbluth algorithm with Markov Chain simulation
 
-This is a special case of the metropolis algorithm.  
+
+
+Imagine visiting "islands" (parameter values) in proportion to their population size (posterior probabilities) for a certain number of weeks (samples from th posterior). The metropolis is the "grandparent" of other strategies -- hard coded below. This is a special case of the metropolis algorithm: 
 
 ```{r}
 library(rethinking)
@@ -47,18 +49,21 @@ plot( 1:400 , positions[1:400] , col = r)
 plot(table(positions), col = r) 
 ```
 
-The metropolis is the "grandparent" of other strategies 
+
 
 ### Gibbs sampling
+
+Gibbs samplers make **adaptive proposals** the distribution of propsed parameter values adjusts itself intelligently. 
 
 samplers use distributions of conjugate pairs of and likeliooods.  
 conjugate pairs have analytic solutions for posterior distribution of an individual parameter.  
 
-### issue wit hgibbs sampling
+An issue with gibbs samplers - correlations in parameter values form narrow valleys. metropolis and gibbs get stuck because they dont know enought about the shape of the distribution (the posterior).
 
-issue- correlations in parameter values form narrow valleys. metropolis and gibbs get stuck because they dont know enought about the shape of the distribution (the posterior).
+The **concentration of measure** principal: most of the probability mass of a high dimensional distribution is always very far from the mode. The 3 dimensional space the sphere is densest at its core, like the peak of a mountain but the vollume increases as we move away from the core 
 
-**concentration of measure** 
+this keeps happening as you add more dimensions. With 10 dimensions you're far from the mode of robability mass.  
+**the sampled points are in a thin high dimensional shell far from the mode**  
 
 
 ```{r}
@@ -80,17 +85,54 @@ dens( Rd , col = r,
       main = 'N[k = 10](0,1) multiariate normal \nradial distance from mode of probability mass')
 ```
 
-this keeps happening as you add more dimensions. With 10 dimensions you're far from the mode of robability mass.  
-**the sampled points are in a thin high dimensional shell far from the mode**  
+### Hamiltonian monte carlo
+*Whenever there is a randomized way of doing something, there is a non-randomized way that delivers better performance but requires more thought*  
+
+HMC uses physical simulations - its like you flick a marble in a bowl in a random direction; and after some time interval stop and record where the marble is. As the marble rolls uphill the momentum slows as translational energy is converted to gravitational potantial energy; the frequency of time spent in the bottom of the bowl is highest which by analogy is the highest density part of the probability mass. it also has really low *autocorrelation* the adjacent samples have no correlation in contrast to metropolis. Its simulating this things like the total energy of the system must be conserved or the algorithm rejects the proposal for the particle. HMC calculates the *gradient* the slope in all directions by using automatic differentiation (a generalized version of back-propegation).  
+
+2 settings needed:  
+leapfrog steps -- long paths  
+step size -- small steps , path can turn sharply  
+
+these need to be tuned to not get autocurrelation (p. 274), this happens automatically in the stan hmc sampler algorithms in a warmup stage, and by using NUTS (no u turn sampler) algorithms. 
+
+hard coded HMC:  
+
+1. function `U` returning the negative log probability of the data at the current parameter values(position)  
+2. function `grad_u` for the gradient of neg log probability at current position  
+3. step size `epsilon`    
+4. amount of leapfrog steps `L`    
+5. starting position `current_q`   
+
+This is for the model on p 273  
+
+xi ∼ Normal( µx , 1)  
+yi ∼ Normal( µy , 1)  
+µx ∼ Normal(0, 0.5)  
+µy ∼ Normal(0, 0.5)
+
+```{r}
+# test data
+set.seed(7)
+y <- rnorm(50)
+x <- rnorm(50)
+x <- as.numeric(scale(x))
+y <- as.numeric(scale(y))
+plot(x,y, col = r)
+```
+
 
 ```{r}
 ## R code 9.5
+# see expression on p 276 
 # U needs to return neg-log-probability
 U <- function( q , a=0 , b=1 , k=0 , d=1 ) {
     muy <- q[1]
     mux <- q[2]
-    U <- sum( dnorm(y,muy,1,log=TRUE) ) + sum( dnorm(x,mux,1,log=TRUE) ) +
-        dnorm(muy,a,b,log=TRUE) + dnorm(mux,k,d,log=TRUE)
+    U <- 
+      sum( dnorm(y, mean = muy, sd = 1, log=TRUE)) + 
+      sum( dnorm(x,mean =  mux,sd =  1, log=TRUE) ) +
+      dnorm(muy,a,b,log=TRUE) + dnorm(mux,k,d,log=TRUE)
     return( -U )
 }
 
@@ -104,13 +146,69 @@ U_gradient <- function( q , a=0 , b=1 , k=0 , d=1 ) {
     G2 <- sum( x - mux ) + (k - mux)/d^2 #dU/dmux
     return( c( -G1 , -G2 ) ) # negative bc energy is neg-log-prob
 }
-# test data
-set.seed(7)
-y <- rnorm(50)
-x <- rnorm(50)
-x <- as.numeric(scale(x))
-y <- as.numeric(scale(y))
 
+```
+
+
+Below we call this function `HMC2`  
+
+```{r, eval = FALSE}
+## R code 9.8
+HMC2 <- function (U, grad_U, epsilon, L, current_q) {
+  q = current_q
+  p = rnorm(length(q),0,1) # random flick - p is momentum.
+  current_p = p
+  
+  # Make a half step for momentum at the beginning
+  p = p - epsilon * grad_U(q) / 2
+  
+  # initialize bookkeeping - saves trajectory
+  qtraj <- matrix(NA,nrow=L+1,ncol=length(q))
+  ptraj <- qtraj
+  qtraj[1,] <- current_q
+  ptraj[1,] <- p
+
+  # here is where the action is over the leapfrog steps
+  # L steps are taken uing he gradient to compute log posterior at each point. 
+  # Alternate full steps for position and momentum
+  for ( i in 1:L ) {
+    q = q + epsilon * p # Full step for the position
+    
+    # Make a full step for the momentum, except at end of trajectory
+    if ( i!=L ) {
+        p = p - epsilon * grad_U(q)
+        ptraj[i+1, ] <- p
+    }
+    qtraj[i+1, ] <- q
+  }
+
+  ## R code 9.10
+  # Make a half step for momentum at the end
+  p = p - epsilon * grad_U(q) / 2
+  ptraj[L+1, ] <- p
+  # Negate momentum at end of trajectory to make the proposal symmetric
+  p = -p
+  # Evaluate potential and kinetic energies at start and end of trajectory
+  current_U = U(current_q)
+  current_K = sum(current_p^2) / 2
+  proposed_U = U(q)
+  proposed_K = sum(p^2) / 2
+  # Accept or reject the state at end of trajectory, returning either
+  # the position at the end of the trajectory or the initial position
+  accept <- 0
+  if (runif(1) < exp(current_U-proposed_U+current_K-proposed_K)) {
+    new_q <- q  # accept
+    accept <- 1
+  } else new_q <- current_q  # reject
+  return(list( q=new_q, traj=qtraj, ptraj=ptraj, accept=accept ))
+}
+
+```
+
+
+Run the simulation 
+
+```{r}
 ## R code 9.7
 library(shape) # for fancy arrows
 Q <- list()
@@ -137,53 +235,16 @@ for ( i in 1:n_samples ) {
     points( Q$traj[L+1,1] , Q$traj[L+1,2] , pch=ifelse( Q$accept==1 , 16 , 1 ) ,
         col=ifelse( abs(Q$dH)>0.1 , "red" , "black" ) )
 }
+```
 
-## R code 9.8
-HMC2 <- function (U, grad_U, epsilon, L, current_q) {
-  q = current_q
-  p = rnorm(length(q),0,1) # random flick - p is momentum.
-  current_p = p
-  # Make a half step for momentum at the beginning
-  p = p - epsilon * grad_U(q) / 2
-  # initialize bookkeeping - saves trajectory
-  qtraj <- matrix(NA,nrow=L+1,ncol=length(q))
-  ptraj <- qtraj
-  qtraj[1,] <- current_q
-  ptraj[1,] <- p
+### fit model with HMC stan with ulam 
 
-## R code 9.9
-  # Alternate full steps for position and momentum
-  for ( i in 1:L ) {
-    q = q + epsilon * p # Full step for the position
-    # Make a full step for the momentum, except at end of trajectory
-    if ( i!=L ) {
-        p = p - epsilon * grad_U(q)
-        ptraj[i+1,] <- p
-    }
-    qtraj[i+1,] <- q
-  }
+Similar to `brms` in that it is a wrapper to `stan` but we use math stats notation to build models as in `quap`  
 
-## R code 9.10
-  # Make a half step for momentum at the end
-  p = p - epsilon * grad_U(q) / 2
-  ptraj[L+1,] <- p
-  # Negate momentum at end of trajectory to make the proposal symmetric
-  p = -p
-  # Evaluate potential and kinetic energies at start and end of trajectory
-  current_U = U(current_q)
-  current_K = sum(current_p^2) / 2
-  proposed_U = U(q)
-  proposed_K = sum(p^2) / 2
-  # Accept or reject the state at end of trajectory, returning either
-  # the position at the end of the trajectory or the initial position
-  accept <- 0
-  if (runif(1) < exp(current_U-proposed_U+current_K-proposed_K)) {
-    new_q <- q  # accept
-    accept <- 1
-  } else new_q <- current_q  # reject
-  return(list( q=new_q, traj=qtraj, ptraj=ptraj, accept=accept ))
-}
 
+Terrain ruggedness example.  
+To use ulam we need to process the data for stan to only have the variables of interest in the model.  
+```{r}
 ## R code 9.11
 library(rethinking)
 data(rugged)
@@ -194,16 +255,6 @@ dd$log_gdp_std <- dd$log_gdp / mean(dd$log_gdp)
 dd$rugged_std <- dd$rugged / max(dd$rugged)
 dd$cid <- ifelse( dd$cont_africa==1 , 1 , 2 )
 
-## R code 9.12
-m8.3 <- quap(
-    alist(
-        log_gdp_std ~ dnorm( mu , sigma ) ,
-        mu <- a[cid] + b[cid]*( rugged_std - 0.215 ) ,
-        a[cid] ~ dnorm( 1 , 0.1 ) ,
-        b[cid] ~ dnorm( 0 , 0.3 ) ,
-        sigma ~ dexp( 1 )
-    ) , data=dd )
-precis( m8.3 , depth=2 )
 
 ## R code 9.13
 dat_slim <- list(
@@ -214,42 +265,78 @@ dat_slim <- list(
 str(dat_slim)
 
 ## R code 9.14
-m9.1 <- ulam(
-    alist(
-        log_gdp_std ~ dnorm( mu , sigma ) ,
-        mu <- a[cid] + b[cid]*( rugged_std - 0.215 ) ,
-        a[cid] ~ dnorm( 1 , 0.1 ) ,
-        b[cid] ~ dnorm( 0 , 0.3 ) ,
-        sigma ~ dexp( 1 )
-    ) , data=dat_slim , chains=1 )
+f9.14 = alist(
+  log_gdp_std ~ dnorm( mu , sigma ) ,
+  mu <- a[cid] + b[cid]*( rugged_std - 0.215 ) ,
+  a[cid] ~ dnorm( 1 , 0.1 ) ,
+  b[cid] ~ dnorm( 0 , 0.3 ) ,
+  sigma ~ dexp( 1 )
+) 
 
-## R code 9.15
-precis( m9.1 , depth=2 )
+# fit model using HMC with stan 
 
-## R code 9.16
-m9.1 <- ulam(
-    alist(
-        log_gdp_std ~ dnorm( mu , sigma ) ,
-        mu <- a[cid] + b[cid]*( rugged_std - 0.215 ) ,
-        a[cid] ~ dnorm( 1 , 0.1 ) ,
-        b[cid] ~ dnorm( 0 , 0.3 ) ,
-        sigma ~ dexp( 1 )
-    ) , data=dat_slim , chains=4 , cores=4 )
+m9.1 <- ulam(f9.14, data=dat_slim , chains=4, cores=4)
 
-## R code 9.17
-show( m9.1 )
+# view results 
+precis(m9.1, depth = 2)
+```
 
-## R code 9.18
-precis( m9.1 , 2 )
+
+
+We can also extract the stan code created by ulam for m9.14 which was made by our model formula.   
+
+```{r}
+stancode(m9.1)
+```
+
+rhat indictes convergence of the markov chains to the target distribution. should be around 1 
+
+
+### Assessing model with posterior visualization and diagnostic plots 
+
+posterior distributions of 
+```{r}
 
 ## R code 9.19
 pairs( m9.1 )
+```
 
+Trace plots and trace rank plots -- look for three things  
+1. stationary - each chain sticks to concentrated area   
+2. good mixing - chain explores the full region  
+3. convergence - all chains converge at same region  
+
+
+
+```{r}
 ## R code 9.20
 traceplot( m9.1 )
+```
 
+Trace rank plots  
+for each parameter, take all the samples from each chain the lowest gets rank 1 the largest gets rank 4 (bc we had 4 chains here). If the markov chain is exploring the sample space effectively the traces will be largely overlapping.  
+these are healthy trace rank plots.  
+```{r}
 ## R code 9.21
 trankplot( m9.1 )
+```
+
+
+### diagnostics  
+
+`n_eff` - how many samples do we need? The ore importatn quakntity is the number of effective samples -- we hae autocorrelationin the samples; think of as the length of the markov chain with no autocorrelation that would provide the same quality of estimate as your chain. In a linear model setting, often 200 effective samples are sugfficient to estimate the posterior mean and an order of magnitude more are needed to estimate the posterior variance.  
+
+`rhat` - if this is above 1 the chain hasn't converged.  
+
+How many chains do we need?  
+one short chain to debug, 4 chains for verification and inference.  
+
+### Understanding poor performance  
+
+-- using bad prior: 
+ 
+
+```{r}
 
 ## R code 9.22
 y <- c(-1,1)
@@ -264,7 +351,23 @@ m9.2 <- ulam(
 
 ## R code 9.23
 precis( m9.2 )
+```
 
+we should have gotten parameter values around 0. stan couldn't explore part of the posterior becauseof the bad prior. The absurd values are due to **divergent transitions** and exploring a parameter space frmo a bad prior far from the actual highest density.  
+
+The red points below are divergent transitions.  
+```{r}
+pairs(m9.2@stanfit)
+```
+
+the chains spend a lot of time around one extreme value with minimal overlap.  
+
+```{r}
+trankplot(m9.2)
+```
+
+Now with better priors. 
+```{r}
 ## R code 9.24
 set.seed(11)
 m9.3 <- ulam(
@@ -275,65 +378,68 @@ m9.3 <- ulam(
         sigma ~ dexp( 1 )
     ) , data=list(y=y) , chains=3 )
 precis( m9.3 )
-
-## R code 9.25
-set.seed(41)
-y <- rnorm( 100 , mean=0 , sd=1 )
-
-## R code 9.26
-set.seed(384)
-m9.4 <- ulam(
-    alist(
-        y ~ dnorm( mu , sigma ) ,
-        mu <- a1 + a2 ,
-        a1 ~ dnorm( 0 , 1000 ),
-        a2 ~ dnorm( 0 , 1000 ),
-        sigma ~ dexp( 1 )
-    ) , data=list(y=y) , chains=3 )
-precis( m9.4 )
-
-## R code 9.27
-m9.5 <- ulam(
-    alist(
-        y ~ dnorm( mu , sigma ) ,
-        mu <- a1 + a2 ,
-        a1 ~ dnorm( 0 , 10 ),
-        a2 ~ dnorm( 0 , 10 ),
-        sigma ~ dexp( 1 )
-    ) , data=list(y=y) , chains=3 )
-precis( m9.5 )
-
-## R code 9.28
-mp <- ulam(
-    alist(
-        a ~ dnorm(0,1),
-        b ~ dcauchy(0,1)
-    ), data=list(y=1) , chains=1 )
-
-## R code 9.29
-m5.8s <- ulam(
-    alist(
-        height ~ dnorm( mu , sigma ) ,
-        mu <- a + bl*leg_left + br*leg_right ,
-        a ~ dnorm( 10 , 100 ) ,
-        bl ~ dnorm( 2 , 10 ) ,
-        br ~ dnorm( 2 , 10 ) ,
-        sigma ~ dexp( 1 )
-    ) , data=d, chains=4,
-    start=list(a=10,bl=0,br=0.1,sigma=1) )
-
-## R code 9.30
-m5.8s2 <- ulam(
-    alist(
-        height ~ dnorm( mu , sigma ) ,
-        mu <- a + bl*leg_left + br*leg_right ,
-        a ~ dnorm( 10 , 100 ) ,
-        bl ~ dnorm( 2 , 10 ) ,
-        br ~ dnorm( 2 , 10 ) ,
-        sigma ~ dexp( 1 )
-    ) , data=d, chains=4,
-    constraints=list(br="lower=0"),
-    start=list(a=10,bl=0,br=0.1,sigma=1) )
-
 ```
+
+
+<!-- ```{r} -->
+<!-- ## R code 9.25 -->
+<!-- set.seed(41) -->
+<!-- y <- rnorm( 100 , mean=0 , sd=1 ) -->
+
+<!-- ## R code 9.26 -->
+<!-- set.seed(384) -->
+<!-- m9.4 <- ulam( -->
+<!--     alist( -->
+<!--         y ~ dnorm( mu , sigma ) , -->
+<!--         mu <- a1 + a2 , -->
+<!--         a1 ~ dnorm( 0 , 1000 ), -->
+<!--         a2 ~ dnorm( 0 , 1000 ), -->
+<!--         sigma ~ dexp( 1 ) -->
+<!--     ) , data=list(y=y) , chains=3 ) -->
+<!-- precis( m9.4 ) -->
+
+<!-- ## R code 9.27 -->
+<!-- m9.5 <- ulam( -->
+<!--     alist( -->
+<!--         y ~ dnorm( mu , sigma ) , -->
+<!--         mu <- a1 + a2 , -->
+<!--         a1 ~ dnorm( 0 , 10 ), -->
+<!--         a2 ~ dnorm( 0 , 10 ), -->
+<!--         sigma ~ dexp( 1 ) -->
+<!--     ) , data=list(y=y) , chains=3 ) -->
+<!-- precis( m9.5 ) -->
+
+<!-- ## R code 9.28 -->
+<!-- mp <- ulam( -->
+<!--     alist( -->
+<!--         a ~ dnorm(0,1), -->
+<!--         b ~ dcauchy(0,1) -->
+<!--     ), data=list(y=1) , chains=1 ) -->
+
+<!-- ## R code 9.29 -->
+<!-- m5.8s <- ulam( -->
+<!--     alist( -->
+<!--         height ~ dnorm( mu , sigma ) , -->
+<!--         mu <- a + bl*leg_left + br*leg_right , -->
+<!--         a ~ dnorm( 10 , 100 ) , -->
+<!--         bl ~ dnorm( 2 , 10 ) , -->
+<!--         br ~ dnorm( 2 , 10 ) , -->
+<!--         sigma ~ dexp( 1 ) -->
+<!--     ) , data=d, chains=4, -->
+<!--     start=list(a=10,bl=0,br=0.1,sigma=1) ) -->
+
+<!-- ## R code 9.30 -->
+<!-- m5.8s2 <- ulam( -->
+<!--     alist( -->
+<!--         height ~ dnorm( mu , sigma ) , -->
+<!--         mu <- a + bl*leg_left + br*leg_right , -->
+<!--         a ~ dnorm( 10 , 100 ) , -->
+<!--         bl ~ dnorm( 2 , 10 ) , -->
+<!--         br ~ dnorm( 2 , 10 ) , -->
+<!--         sigma ~ dexp( 1 ) -->
+<!--     ) , data=d, chains=4, -->
+<!--     constraints=list(br="lower=0"), -->
+<!--     start=list(a=10,bl=0,br=0.1,sigma=1) ) -->
+
+<!-- ``` -->
 
