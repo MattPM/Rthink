@@ -10,6 +10,7 @@
 *.vcf
 *.xlsx
 *.RData
+*.html 
 *~
 *.DS_Store
 
