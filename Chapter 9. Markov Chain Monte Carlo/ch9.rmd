@@ -10,7 +10,7 @@ output: github_document
 Imagine visiting "islands" (parameter values) in proportion to their population size (posterior probabilities) for a certain number of weeks (samples from th posterior). The metropolis is the "grandparent" of other strategies -- hard coded below. This is a special case of the metropolis algorithm: 
 
 ```{r}
-library(rethinking)
+suppressMessages(library(rethinking))
 r = rangi2
 set.seed(1990)
 ## R code 9.1
@@ -49,6 +49,7 @@ plot( 1:400 , positions[1:400] , col = r)
 plot(table(positions), col = r) 
 ```
 
+A Markov chain can be summarized by the transition probability matrix -- see Bertsekas p 342.  
 
 
 ### Gibbs sampling
@@ -379,67 +380,113 @@ m9.3 <- ulam(
     ) , data=list(y=y) , chains=3 )
 precis( m9.3 )
 ```
+```{r}
+trankplot(m9.3)
+```
 
 
-<!-- ```{r} -->
-<!-- ## R code 9.25 -->
-<!-- set.seed(41) -->
-<!-- y <- rnorm( 100 , mean=0 , sd=1 ) -->
 
-<!-- ## R code 9.26 -->
-<!-- set.seed(384) -->
-<!-- m9.4 <- ulam( -->
-<!--     alist( -->
-<!--         y ~ dnorm( mu , sigma ) , -->
-<!--         mu <- a1 + a2 , -->
-<!--         a1 ~ dnorm( 0 , 1000 ), -->
-<!--         a2 ~ dnorm( 0 , 1000 ), -->
-<!--         sigma ~ dexp( 1 ) -->
-<!--     ) , data=list(y=y) , chains=3 ) -->
-<!-- precis( m9.4 ) -->
+9E1  
+For the metropolis algorithm the proposal must be symmetric. You can have a discrete or contiinuous distribution with any likelihhhood.  
 
-<!-- ## R code 9.27 -->
-<!-- m9.5 <- ulam( -->
-<!--     alist( -->
-<!--         y ~ dnorm( mu , sigma ) , -->
-<!--         mu <- a1 + a2 , -->
-<!--         a1 ~ dnorm( 0 , 10 ), -->
-<!--         a2 ~ dnorm( 0 , 10 ), -->
-<!--         sigma ~ dexp( 1 ) -->
-<!--     ) , data=list(y=y) , chains=3 ) -->
-<!-- precis( m9.5 ) -->
+9E2  
+Gibbs sampling is more efficient because it is not completely random and uses analytical solutions for the posterior to make adaptive / smart updating steps. Gibbs can get stuck in some posterior regions.  
 
-<!-- ## R code 9.28 -->
-<!-- mp <- ulam( -->
-<!--     alist( -->
-<!--         a ~ dnorm(0,1), -->
-<!--         b ~ dcauchy(0,1) -->
-<!--     ), data=list(y=1) , chains=1 ) -->
+9E3  
+HMC cant handle discrete parameters.  
 
-<!-- ## R code 9.29 -->
-<!-- m5.8s <- ulam( -->
-<!--     alist( -->
-<!--         height ~ dnorm( mu , sigma ) , -->
-<!--         mu <- a + bl*leg_left + br*leg_right , -->
-<!--         a ~ dnorm( 10 , 100 ) , -->
-<!--         bl ~ dnorm( 2 , 10 ) , -->
-<!--         br ~ dnorm( 2 , 10 ) , -->
-<!--         sigma ~ dexp( 1 ) -->
-<!--     ) , data=d, chains=4, -->
-<!--     start=list(a=10,bl=0,br=0.1,sigma=1) ) -->
+9E4  
+number of effective samples is a measure of autocorelation. increase autocorrelation decrese effective number of parameters because less samples provide equivalent information about the posterior when the values are very highly correlated.  
 
-<!-- ## R code 9.30 -->
-<!-- m5.8s2 <- ulam( -->
-<!--     alist( -->
-<!--         height ~ dnorm( mu , sigma ) , -->
-<!--         mu <- a + bl*leg_left + br*leg_right , -->
-<!--         a ~ dnorm( 10 , 100 ) , -->
-<!--         bl ~ dnorm( 2 , 10 ) , -->
-<!--         br ~ dnorm( 2 , 10 ) , -->
-<!--         sigma ~ dexp( 1 ) -->
-<!--     ) , data=d, chains=4, -->
-<!--     constraints=list(br="lower=0"), -->
-<!--     start=list(a=10,bl=0,br=0.1,sigma=1) ) -->
+9E5  
+R hat should approach 1 if sampling from the posterior correctly.  
 
-<!-- ``` -->
+9E6 and 9E7 see book  
+
+9M1
+
+Note fitting these with `log_lik= TRUE` in order to use WIAC to see if they are differrent. 
+
+```{r}
+data(rugged)
+d <- rugged
+d$log_gdp <- log(d$rgdppc_2000)
+dd <- d[ complete.cases(d$rgdppc_2000) , ]
+dd$log_gdp_std <- dd$log_gdp / mean(dd$log_gdp)
+dd$rugged_std <- dd$rugged / max(dd$rugged)
+dd$cid <- ifelse( dd$cont_africa==1 , 1 , 2 )
+
+## R code 9.13
+dat_slim <- list(
+    log_gdp_std= dd$log_gdp_std,
+    rugged_std = dd$rugged_std,
+    cid = as.integer( dd$cid )
+)
+
+# previous model 
+# ## R code 9.14
+# f9.14 = alist(
+#   log_gdp_std ~ dnorm(mu, sigma),
+#   mu <- a[cid] + b[cid]*( rugged_std - 0.215 ),
+#   a[cid] ~ dnorm( 1 , 0.1 ) ,
+#   b[cid] ~ dnorm( 0 , 0.3 ) ,
+#   sigma ~ dexp( 1 )
+# )
+# 
+# # fit model using HMC with stan
+
+
+
+## R code 9.14
+f9.15 = alist(
+  log_gdp_std ~ dnorm(mu, sigma),
+  mu <- a[cid] + b[cid]*( rugged_std - 0.215 ),
+  a[cid] ~ dnorm( 1 , 0.1 ) ,
+  b[cid] ~ dnorm( 0 , 0.3 ) ,
+  sigma ~ dexp( 0.3 )
+) 
+
+# fit model using HMC with stan 
+m9.15 <- ulam(f9.15, data=dat_slim ,  log_lik = TRUE, chains=4, cores=4,)
+
+# refit original model 
+m9.14 <- ulam(f9.14, data=dat_slim ,  log_lik = TRUE, chains=4, cores=4,)
+
+# view results 
+precis(m9.15, depth = 2)
+```
+
+```{r}
+trankplot(m9.15)
+```
+
+
+
+```{r}
+pairs(m9.15)
+```
+
+
+```{r}
+compare(m9.14, m9.15)
+```
+
+
+```{r}
+plot(compare(m9.14, m9.15))
+```
+
+
+the narrow prior does not have a big effect. 
+
+```{r}
+curve( dexp(x,1)  , col="black" , ylim = c(0,1))
+curve( dexp(x,0.3), add = TRUE, col="red" )
+```
+
+
+
+
+
+
 
