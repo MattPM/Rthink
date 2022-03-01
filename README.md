@@ -26,15 +26,19 @@ lectures](https://www.youtube.com/channel/UCNJK6_DZvcMqNSzQdEkzvzA)
 
 [**Chapter 2**](https://github.com/MattPM/Rthink/blob/master/Chapter%202.%20Small%20Worlds%20and%20Large%20Worlds/ch2.md)  
 [**Chapter 3**](https://github.com/MattPM/Rthink/blob/master/Chapter%203.%20Sampling%20the%20Imaginary/ch3.md)  
-[**Chapter 4**](https://github.com/MattPM/Rthink/blob/master/Chapter%204.%20Geocentric%20Models/Ch4.md)
-
-### code translations by others
-
-[brms translation](https://bookdown.org/content/4857/)  
-[julia translation](https://github.com/StatisticalRethinkingJulia)
+[**Chapter 4**](https://github.com/MattPM/Rthink/blob/master/Chapter%204.%20Geocentric%20Models/Ch4.md)  
+[**Chapter 5**](https://github.com/MattPM/Rthink/blob/master/Chapter%205.%20DAGs%20multiple%20regression%20causal%20inference/ch5.md)  
+[**Chapter 6**](https://github.com/MattPM/Rthink/blob/master/Chapter%206.%20bias%20colineariry%20berkson's%2C%20simpsons%20paradox%20types%20of%20bias/ch6.md)  
+[**Chapter 7**](https://github.com/MattPM/Rthink/blob/master/Chapter%207.%20model%20selection%20information%20theory%20entropy%20cross%20validation/ch7.md)  
+[**Chapter 8**](https://github.com/MattPM/Rthink/blob/master/chapter%208.%20interactions%20discrete%20and%20continuous/ch8.md)  
+[**Chapter 9**](https://github.com/MattPM/Rthink/blob/master/Chapter%209.%20Markov%20Chain%20Monte%20Carlo/ch9.md)  
+\[**Chapter 10**\] <!-- [**Chapter 11**]()   -->
+<!-- [**Chapter 12**]()   --> <!-- [**Chapter 13**]()   -->
+<!-- [**Chapter 14**]()   --> <!-- [**Chapter 15**]()   -->
 
 ``` r
 suppressMessages(library(rethinking))
+set.seed(1990)
 ```
 
 ### quick links
@@ -120,9 +124,9 @@ posterior
 ``` r
 precis(m1)
 #>            mean         sd      5.5%     94.5%
-#> alpha 1.9418871 0.03740703 1.8821035 2.0016708
-#> Bx    0.9020144 0.17436992 0.6233376 1.1806912
-#> sigma 0.2599477 0.02610210 0.2182315 0.3016639
+#> alpha 1.9631489 0.05145478 1.8809143 2.0453836
+#> Bx    1.0430971 0.20647950 0.7131030 1.3730912
+#> sigma 0.3409979 0.03469045 0.2855558 0.3964399
 ```
 
 plot predicted mean and 89% compatibility intervals for the mean

@@ -28,15 +28,22 @@ My notes, code, examples and problem set solutions for the textbook [Statistical
 [**Chapter 2**](https://github.com/MattPM/Rthink/blob/master/Chapter%202.%20Small%20Worlds%20and%20Large%20Worlds/ch2.md)  
 [**Chapter 3**](https://github.com/MattPM/Rthink/blob/master/Chapter%203.%20Sampling%20the%20Imaginary/ch3.md)  
 [**Chapter 4**](https://github.com/MattPM/Rthink/blob/master/Chapter%204.%20Geocentric%20Models/Ch4.md)  
-
-### code translations by others 
-[brms translation](https://bookdown.org/content/4857/)  
-[julia translation](https://github.com/StatisticalRethinkingJulia)  
+[**Chapter 5**](https://github.com/MattPM/Rthink/blob/master/Chapter%205.%20DAGs%20multiple%20regression%20causal%20inference/ch5.md)  
+[**Chapter 6**](https://github.com/MattPM/Rthink/blob/master/Chapter%206.%20bias%20colineariry%20berkson's%2C%20simpsons%20paradox%20types%20of%20bias/ch6.md)  
+[**Chapter 7**](https://github.com/MattPM/Rthink/blob/master/Chapter%207.%20model%20selection%20information%20theory%20entropy%20cross%20validation/ch7.md)  
+[**Chapter 8**](https://github.com/MattPM/Rthink/blob/master/chapter%208.%20interactions%20discrete%20and%20continuous/ch8.md)  
+[**Chapter 9**](https://github.com/MattPM/Rthink/blob/master/Chapter%209.%20Markov%20Chain%20Monte%20Carlo/ch9.md)  
+[**Chapter 10**]
+<!-- [**Chapter 11**]()   -->
+<!-- [**Chapter 12**]()   -->
+<!-- [**Chapter 13**]()   -->
+<!-- [**Chapter 14**]()   -->
+<!-- [**Chapter 15**]()   -->
 
 ```{r}
 suppressMessages(library(rethinking))
+set.seed(1990)
 ```
-
 
 ### quick links
 
