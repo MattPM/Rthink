@@ -32,9 +32,10 @@ lectures](https://www.youtube.com/channel/UCNJK6_DZvcMqNSzQdEkzvzA)
 [**Chapter 7**](https://github.com/MattPM/Rthink/blob/master/Chapter%207.%20model%20selection%20information%20theory%20entropy%20cross%20validation/ch7.md)  
 [**Chapter 8**](https://github.com/MattPM/Rthink/blob/master/chapter%208.%20interactions%20discrete%20and%20continuous/ch8.md)  
 [**Chapter 9**](https://github.com/MattPM/Rthink/blob/master/Chapter%209.%20Markov%20Chain%20Monte%20Carlo/ch9.md)  
-\[**Chapter 10**\] <!-- [**Chapter 11**]()   -->
-<!-- [**Chapter 12**]()   --> <!-- [**Chapter 13**]()   -->
-<!-- [**Chapter 14**]()   --> <!-- [**Chapter 15**]()   -->
+[**Chapter 10**](https://github.com/MattPM/Rthink/blob/master/Chapter%2010.%20GLMs%20and%20maximum%20entropy/ch10.md)  
+<!-- [**Chapter 11**]()   --> <!-- [**Chapter 12**]()   -->
+<!-- [**Chapter 13**]()   --> <!-- [**Chapter 14**]()   -->
+<!-- [**Chapter 15**]()   -->
 
 ``` r
 suppressMessages(library(rethinking))
