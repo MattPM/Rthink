@@ -1,5 +1,6 @@
 ---
 output: github_document
+theme: united
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -15,14 +16,10 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-My notes, code, examples and problem set solutions for the textbook [Statistical Rethinking - *A Bayesian Course with Examples in R and Stan*](https://xcelab.net/rm/statistical-rethinking/)"  The .md documents for each chapter are readable.  
+My notes, code, examples and problem set solutions for the textbook [Statistical Rethinking - *A Bayesian Course with Examples in R and Stan* by Richard McElreath](https://xcelab.net/rm/statistical-rethinking/)"  The .md documents for each chapter are readable.  
 
 ### Course: 
-[book code boxes](https://github.com/rmcelreath/rethinking/blob/master/book_code_boxes.txt)  
-[course website](https://xcelab.net/rm/statistical-rethinking/)  
-[2022 lectures](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)  
-[2019 lectures](https://www.youtube.com/channel/UCNJK6_DZvcMqNSzQdEkzvzA)  
-
+[updated 2022 lectures](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)   
 
 ### my notes / code / problem sets
 [**Chapter 2**](https://github.com/MattPM/Rthink/blob/master/Chapter%202.%20Small%20Worlds%20and%20Large%20Worlds/ch2.md)  
@@ -45,10 +42,10 @@ suppressMessages(library(rethinking))
 set.seed(1990)
 ```
 
-### quick links
+## Quick notes for using rethinking package tools
 
-sim some data 
-```{r}
+### sim some data  
+```{r, fig.width=3, fig.height=3}
 N = 50
 z = rnorm(n = N, mean = 0, sd = 0.2)
 x = z + rnorm(n = N, mean = 0, sd = 0.1)
@@ -57,9 +54,9 @@ d = data.frame(x,z,y)
 pairs(d, col = rangi2)
 ```
 
-create dag 
+### create dag 
 
-```{r}
+```{r, fig.width=2, fig.height=2}
 suppressMessages(library(dagitty))
 dag = dagitty::dagitty(
 "dag{
@@ -71,7 +68,7 @@ adjustmentSets(dag, exposure = 'x', outcome = 'y')
 ```
 
 
-fit model  
+### Specify model formula 
 ```{r}
 f1 = alist( 
   # estimand
@@ -84,14 +81,17 @@ f1 = alist(
   sigma ~ dexp(1)
   )
 
-# fit model 
-# m1 = ulam(flist = f1,data = d)
-m1 = quap(flist = f1,data = d)
-
 ```
 
-prior predictive simulation 
+### fit model with MCMC or quadratic approximation
 ```{r}
+# fit model 
+m1 = quap(flist = f1,data = d)
+# m1 = ulam(flist = f1,data = d)
+```
+
+### prior predictive simulation 
+```{r, fig.width=3, fig.height=3}
 
 # m1 = quap(flist, data)
 # simulate prior from model formula 
@@ -112,14 +112,15 @@ for (i in 1:100) {
 
 ```
 
-posterior 
+### inspect posterior estimates
 ```{r}
+# note set depth = 2 for more complex models 
 precis(m1)
 ```
 
-plot predicted mean and 89% compatibility intervals for the mean 
+### plot predictied and 89% compatibility intervals for the mean 
 
-```{r}
+```{r, fig.width=3, fig.height=3}
 sim.x = seq(-2, 2,length.out = 50)
 # extract posterior distributions for 50 simulated x values 
 post = link(m1, data = data.frame(x = sim.x))
@@ -130,6 +131,42 @@ shade(apply(post, 2, PI), sim.x)
 
 ```
 
+### View stan code for the model 
+
+```{r, eval = FALSE}
+stancode(m1)
+```
+
+the output of `stancode(m1)` is copied below: 
+
+```{stan, eval=FALSE, output.var = 'test'}
+data{
+    int<lower=1> N;
+    real y[N];
+    real x[N];
+}
+parameters{
+    real alpha;
+    real Bx;
+    real<lower=0> sigma;
+}
+model{
+    vector[N] mu;
+    sigma ~ exponential( 1 );
+    Bx ~ normal( 0 , 0.5 );
+    alpha ~ normal( 0 , 0.5 );
+    for ( i in 1:N ) {
+        mu[i] = alpha + (Bx * x[i]);
+    }
+    y ~ normal( mu , sigma );
+}
+generated quantities{
+    vector[N] mu;
+    for ( i in 1:N ) {
+        mu[i] = alpha + (Bx * x[i]);
+    }
+}
+```
 
 
 ### Lectures  

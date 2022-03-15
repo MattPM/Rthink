@@ -9,18 +9,14 @@
 
 My notes, code, examples and problem set solutions for the textbook
 [Statistical Rethinking - *A Bayesian Course with Examples in R and
-Stan*](https://xcelab.net/rm/statistical-rethinking/)" The .md documents
-for each chapter are readable.
+Stan* by Richard
+McElreath](https://xcelab.net/rm/statistical-rethinking/)" The .md
+documents for each chapter are readable.
 
 ### Course:
 
-[book code
-boxes](https://github.com/rmcelreath/rethinking/blob/master/book_code_boxes.txt)  
-[course website](https://xcelab.net/rm/statistical-rethinking/)  
-[2022
-lectures](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)  
-[2019
-lectures](https://www.youtube.com/channel/UCNJK6_DZvcMqNSzQdEkzvzA)
+[updated 2022
+lectures](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)
 
 ### my notes / code / problem sets
 
@@ -42,9 +38,9 @@ suppressMessages(library(rethinking))
 set.seed(1990)
 ```
 
-### quick links
+## Quick notes for using rethinking package tools
 
-sim some data
+### sim some data
 
 ``` r
 N = 50
@@ -57,7 +53,7 @@ pairs(d, col = rangi2)
 
 ![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-create dag
+### create dag
 
 ``` r
 suppressMessages(library(dagitty))
@@ -77,7 +73,7 @@ adjustmentSets(dag, exposure = 'x', outcome = 'y')
 #>  {}
 ```
 
-fit model
+### Specify model formula
 
 ``` r
 f1 = alist( 
@@ -90,13 +86,17 @@ f1 = alist(
   Bx ~ dnorm(0,0.5), 
   sigma ~ dexp(1)
   )
-
-# fit model 
-# m1 = ulam(flist = f1,data = d)
-m1 = quap(flist = f1,data = d)
 ```
 
-prior predictive simulation
+### fit model with MCMC or quadratic approximation
+
+``` r
+# fit model 
+m1 = quap(flist = f1,data = d)
+# m1 = ulam(flist = f1,data = d)
+```
+
+### prior predictive simulation
 
 ``` r
 
@@ -118,11 +118,12 @@ for (i in 1:100) {
 }
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-posterior
+### inspect posterior estimates
 
 ``` r
+# note set depth = 2 for more complex models 
 precis(m1)
 #>            mean         sd      5.5%     94.5%
 #> alpha 1.9631489 0.05145478 1.8809143 2.0453836
@@ -130,7 +131,7 @@ precis(m1)
 #> sigma 0.3409979 0.03469045 0.2855558 0.3964399
 ```
 
-plot predicted mean and 89% compatibility intervals for the mean
+### plot predictied and 89% compatibility intervals for the mean
 
 ``` r
 sim.x = seq(-2, 2,length.out = 50)
@@ -142,7 +143,44 @@ lines(sim.x, apply(post,2,mean))
 shade(apply(post, 2, PI), sim.x)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+### View stan code for the model
+
+``` r
+stancode(m1)
+```
+
+the output of `stancode(m1)` is copied below:
+
+``` stan
+data{
+    int<lower=1> N;
+    real y[N];
+    real x[N];
+}
+parameters{
+    real alpha;
+    real Bx;
+    real<lower=0> sigma;
+}
+model{
+    vector[N] mu;
+    sigma ~ exponential( 1 );
+    Bx ~ normal( 0 , 0.5 );
+    alpha ~ normal( 0 , 0.5 );
+    for ( i in 1:N ) {
+        mu[i] = alpha + (Bx * x[i]);
+    }
+    y ~ normal( mu , sigma );
+}
+generated quantities{
+    vector[N] mu;
+    for ( i in 1:N ) {
+        mu[i] = alpha + (Bx * x[i]);
+    }
+}
+```
 
 ### Lectures
 

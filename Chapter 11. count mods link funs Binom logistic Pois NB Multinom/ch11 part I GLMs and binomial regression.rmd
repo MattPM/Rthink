@@ -1,0 +1,515 @@
+---
+title: 'Ch 11 part I: GLMs and binomial regression'
+output: github_document
+---
+
+```{r}
+knitr::opts_chunk$set(
+  #tidy = TRUE,
+  #tidy.opts = list(width.cutoff = 95),
+  message = FALSE,
+  warning = TRUE, 
+  eval = TRUE
+  # root.dir = here()
+)
+
+
+```
+
+
+
+Generalized linear models for counts. 
+
+Logistic and aggregated binomial regression are generalizations of binomial regression. If we want to model some observed counts as a function of some predictor variables we can start with: y(count) ~ Binomial(n,p) p is the proabbility of a success on some "trial" and n is the number of trials. Logistic regression is binomial when outcomes can take values 0, 1. When individual trials with the same covariate are aggregated together it's "aggregated binomial regression" -- outcome can take any value 0, to n, the number of trials. Both use the logit link. As in ch 10, a link function maps the linear space of the predictor linear model betaX + alpha onto the non linear space of the parameter in a probability distribution. 
+
+see p 325 for experiment description. 
+
+
+first quickly plot the actual outcome data per actor bc i dont understand what i am acually trying to model here. ok understand now; each actor was tested multiple times under different treatment conditions; the outcome variable is the percentage of time the actor pulled left but pulling left is a different thing depending on the treatment. 
+the point of hte treatment vars for no food present is to determine the handedness of the animal / prefernce if there is one. 
+
+1 = 2 food R, no partner  
+2 = 2 food L, no partner  
+3 = 2 food R, partner  
+4 = 2 food L, partner  
+
+Key - there is always food for the animal on both sides they can pull left or right and get food. Only by pulling right do they help out the other guy. 
+
+```{r}
+## R code 11.1
+library(rethinking)
+r = rangi2
+data(chimpanzees)
+d <- chimpanzees
+d$treatment <- 1 + d$prosoc_left + 2*d$condition
+```
+
+
+```{r}
+library(ggplot2); theme_set(theme_bw())
+
+
+ggplot(d, aes(x = as.factor(treatment), y = pulled_left, fill = as.factor(treatment))) + 
+  geom_col() + 
+  facet_wrap(~actor)
+
+```
+
+```{r}
+unique(d$treatment)
+table(d$treatment, d$prosoc_left)
+```
+
+The model:
+
+L[i] ~ Binomial( 1, p[i] )  
+logit(p[i]) = a[ actor[i] ]  + B[ treatment[i] ]  
+a[j] ~ tbd  
+B[k] ~ tbd  
+
+L is a 0 , 1 indicator outcome for "pulled_left" so it could also be writeen as bernoulli(pi) == Binomial(1, pi).  
+There are 7 alpha parameters one for each chimp.  
+4 treatment parameters , one for each of the combined factor indicating presence of partner and choise of prosocial option.  
+
+Specifying priors - consider small model with single a variable. 
+
+**remmber: logit means log odds** so we will have to go back and forth between the log odds and hte outcome probability scale with an inverse logit transform. 
+
+```{r}
+## R code 11.4
+# very wide prior 
+m11.1 <- quap(
+    alist(
+        pulled_left ~ dbinom( 1 , p ) ,
+        logit(p) <- a ,
+        a ~ dnorm( 0 , 10 )
+    ) , data=d )
+
+## R code 11.5
+set.seed(1999)
+prior <- extract.prior( m11.1 , n=1e4 )
+```
+
+Now need to convert the prior to the outcome scale by calculating the inverse function. This shows a flat prior in logit space is not a flat prior in the outcome probability space--the model thinks that the chimps either never or always pull left lever. 
+```{r}
+## R code 11.6
+p <- inv_logit( prior$a )
+dens( p , adj=0.1 )
+```
+
+Adding treatment effects--show what a flat prior for beta implies:  
+L[i] ~ Binomial( 1, p[i] )  
+logit(p[i]) = a[ actor[i] ]  + B[ treatment[i] ]  
+a[j] ~ N(0, - )  
+B[k] ~ N(0, -)  
+```{r}
+## R code 11.7
+# make sure i understand: 
+# f11.2 = alist(
+#   pulled_left ~ dbinom(1, p)
+#   logit(p) <- a + B[treatment],
+#   a ~ dnorm(0,1.5), 
+#   B ~ dnorm(0,10)
+# )
+
+
+m11.2 <- quap(
+    alist(
+        pulled_left ~ dbinom( 1 , p ) ,
+        logit(p) <- a + b[treatment] ,
+        a ~ dnorm( 0 , 1.5 ),
+        b[treatment] ~ dnorm( 0 , 10 )
+    ) , data=d )
+set.seed(1999)
+prior <- extract.prior( m11.2 , n=1e4 )
+names(prior)
+```
+```{r}
+hist(prior$a, col = r)
+par(mfrow = c(2,2))
+sapply(1:4, function(x) hist(prior$b[ ,x], col=r))
+```
+
+Probability of pulling left for each treatment 
+```{r}
+p <- sapply( 1:4 , function(k) inv_logit( prior$a + prior$b[,k] ) )
+```
+
+prior differences among treatments -- The logit scale piles all probability at 0 and 1. With a flat prior model thinks before seeing dataa treatments are completely alike or completely different.
+```{r}
+## R code 11.8
+dens( abs( p[,1] - p[,2] ) , adj=0.1 )
+```
+
+ With a N(0,0.5) prior the avg difference expected is around 10%. 
+
+```{r}
+## R code 11.9
+m11.3 <- quap(
+    alist(
+        pulled_left ~ dbinom( 1 , p ) ,
+        logit(p) <- a + b[treatment] ,
+        a ~ dnorm( 0 , 1.5 ),
+        b[treatment] ~ dnorm( 0 , 0.5 )
+    ) , data=d )
+set.seed(1999)
+prior <- extract.prior( m11.3 , n=1e4 )
+p <- sapply( 1:4 , function(k) inv_logit( prior$a + prior$b[,k] ) )
+dens( abs( p[,1] - p[,2] ) , adj=0.1 )
+```
+
+Strong effects still possible. but these regularizing priors will help reduce overfitting. 
+
+
+### fit HMC stan model. 
+
+If this was our central research question its reasonable but this takes ridiculously long to fit. this would not scale well to 20 thousand separately fit models. 
+```{r}
+## R code 11.10
+# trimmed data list
+dat_list <- list(
+    pulled_left = d$pulled_left,
+    actor = d$actor,
+    treatment = as.integer(d$treatment) 
+    )
+
+## R code 11.11
+f11.4 = alist(
+  pulled_left ~ dbinom(1, p), 
+  logit(p) <- a[actor] + b[treatment], 
+  a[actor] ~ dnorm(0, 1.5), 
+  b[treatment] ~ dnorm(0, 0.5)
+)
+
+
+m11.4 <- ulam(f11.4, data=dat_list , chains=4 , log_lik=TRUE)
+precis( m11.4 , depth=2 )
+```
+
+### Examining model posterior distributions  
+
+We need to extract samples from the model fit and look at them on the outcome scale with the inverse logit transform. Remember: model was logit() so the betas are in terms of log odds; want to go back to probblity with the inverse logit transform (the exp). 
+
+```{r}
+## R code 11.12
+post <- extract.samples(m11.4)
+p_left <- inv_logit( post$a )
+plot(post$a, inv_logit(post$a), col = r , cex = 0.1)
+```
+
+Now we extract alpha- the intercept term one for eah animal tells us if there is a handedness perference. At 0.5 on the outcome scale 
+
+```{r}
+plot( precis( as.data.frame(p_left) ) , xlim=c(0,1) )
+```
+
+
+Now at the effects: **Note since we adjusted coefficients for the variation in handedness across actors with the random intercept, these estimates adjust for handedness**  
+
+LN means prosocial left no partner -- meaning the "prosocial option" so the chimp slid food down the table but there wasnt another chimp on the other side. 
+
+```{r}
+## R code 11.13
+labs <- c("R/N","L/N","R/P","L/P")
+plot( precis( m11.4 , depth=2 , pars="b" ) , labels=labs )
+```
+
+Now at the contrasts db13 is difference between beta 1 and beta 3. -- do the chimps choose pro social option more when there is another chimp on the other side of the table? 
+
+contrasts between partner no partner treatment. 
+
+db13 says difference between no artner pertner treatments when prosocial option is on the right. If there is evidence of more prosocial choice when artner on the right will show up as a larger difference consistent with pulling right more when partner is prestne. this hows pulled left more when partner was absent... 
+
+```{r}
+## R code 11.14
+diffs <- list(
+    db13 = post$b[,1] - post$b[,3],
+    db24 = post$b[,2] - post$b[,4] )
+plot( precis(diffs) )
+```
+
+
+Below filled points means partner present. 
+
+```{r}
+## R code 11.15
+pl <- by( d$pulled_left , list( d$actor , d$treatment ) , mean )
+pl[1,]
+
+## R code 11.16
+plot( NULL , xlim=c(1,28) , ylim=c(0,1) , xlab="" ,
+    ylab="proportion left lever" , xaxt="n" , yaxt="n" )
+axis( 2 , at=c(0,0.5,1) , labels=c(0,0.5,1) )
+abline( h=0.5 , lty=2 )
+for ( j in 1:7 ) abline( v=(j-1)*4+4.5 , lwd=0.5 )
+for ( j in 1:7 ) text( (j-1)*4+2.5 , 1.1 , concat("actor ",j) , xpd=TRUE )
+for ( j in (1:7)[-2] ) {
+    lines( (j-1)*4+c(1,3) , pl[j,c(1,3)] , lwd=2 , col=rangi2 )
+    lines( (j-1)*4+c(2,4) , pl[j,c(2,4)] , lwd=2 , col=rangi2 )
+}
+points( 1:28 , t(pl) , pch=16 , col="white" , cex=1.7 )
+points( 1:28 , t(pl) , pch=c(1,1,16,16) , col=rangi2 , lwd=2 )
+yoff <- 0.01
+text( 1 , pl[1,1]-yoff , "R/N" , pos=1 , cex=0.8 )
+text( 2 , pl[1,2]+yoff , "L/N" , pos=3 , cex=0.8 )
+text( 3 , pl[1,3]-yoff , "R/P" , pos=1 , cex=0.8 )
+text( 4 , pl[1,4]+yoff , "L/P" , pos=3 , cex=0.8 )
+mtext( "observed proportions\n" )
+
+
+```
+
+
+```{r,eval=FALSE}
+## R code 11.17
+dat <- list( actor=rep(1:7,each=4) , treatment=rep(1:4,times=7) )
+p_post <- link( m11.4 , data=dat )
+p_mu <- apply( p_post , 2 , mean )
+p_ci <- apply( p_post , 2 , PI )
+
+
+```
+
+### Understanding relative and absolute effect size estimates from count glm  
+
+absolute effects -- difference in probabiltiy of an event -- this is the outcome scale (probability pulled left).  
+
+relative effects -- the changes in **odds** as a proportion. e.g. the odds of an event double. These can be hard to interpret if the base rate is low (doubling the odds from 1/ 1000 to 2/ 1000) but help in understanding conditional effects. 
+
+To calculate relative odds, we exponentiate the estimate of the effect size. Below we can calculate the contrast effect size of treatment 4 vs 2 in terms of relative odds.
+
+The change in probability puled left is the contrast on the outcome scale. 
+```{r}
+
+## R code 11.23
+post <- extract.samples(m11.4)
+mean( post$b[ ,4] - post$b[ ,2] )
+```
+
+
+The outcome contrast on the relative odds scale: effect of switching from treatent 2 to 4 is 0.92; can also interpret as a 100-x = 0.92 = 8% reduction in odds: 
+```{r}
+mean( exp(post$b[ ,4] - post$b[ ,2]) )
+```
+
+Note because the 4 vs 2 contrast is our effect of interest we are calculating that on the outcome scale, then exponentiating that; need to remember log rules--this is not equivalent to:
+
+```{r}
+mean( exp(post$b[ ,4]) - exp(post$b[ ,2]))
+```
+
+
+### Aggregated binomial regression  
+
+Below we aggregate counts (left pull) per individual. We don't care about the order of individual pulls of the lever. The same information is contained in a count of how many times each individual pulled the left hand lever for each combination of predictor variables.
+
+```{r}
+
+## R code 11.24
+suppressMessages(library(tidyverse))
+data(chimpanzees)
+d <- chimpanzees
+d$treatment <- 1 + d$prosoc_left + 2*d$condition
+d$side <- d$prosoc_left + 1 # right 1, left 2
+d$cond <- d$condition + 1 # no partner 1, partner 2
+
+d_aggregated = d %>%
+  group_by(treatment, actor, side, condition) %>% 
+  summarize(pulled_left = sum(pulled_left))
+
+d_aggregated
+```
+
+
+### Fit and compare the aggregated binomial to the individual count binomial. 
+```{r}
+## R code 11.25
+dat <- with( d_aggregated , list(
+    left_pulls = pulled_left,
+    treatment = treatment,
+    actor = actor,
+    side = side,
+    cond = condition ) )
+
+dat
+```
+
+here the 18 is the sum for each individual; doesnt have to be hard coded. 
+```{r}
+f11.6 = alist(
+  left_pulls ~ dbinom( 18 , p ) ,
+  logit(p) <- a[actor] + b[treatment] ,
+  a[actor] ~ dnorm( 0 , 1.5 ) ,
+  b[treatment] ~ dnorm( 0 , 0.5 )
+  )
+m11.6 <- ulam(f11.6,data=dat , chains=4 , log_lik=TRUE )
+
+
+precis(m11.6, depth = 2)
+precis(m11.4, depth = 2)
+```
+
+
+Above we get the same estimates, but since the aggregated model uses a term for the different ways the counts could be realized, information criteria is not comparable between the aggregated binomial binomial models
+```{r}
+
+## R code 11.26
+compare( m11.6 , m11.4 , func=PSIS )
+
+```
+this is because there are more possible ways to see the aggregated data (see below). This difference doesn't change inference.
+```{r}
+## R code 11.27
+# deviance of aggregated 6-in-9
+-2*dbinom(6,9,0.2,log=TRUE)
+# deviance of dis-aggregated
+-2*sum(dbern(c(1,1,1,1,1,1,0,0,0),0.2,log=TRUE))
+
+```
+
+The WAIC and psis penaltys have influential vlaues in the aggregated models because instead of calculating something akin to leave one out cross validation, they are calculating leave 18 out in a sense. 
+
+The aggregated format can be better for multilevel models. 
+
+<!-- ```{r} -->
+<!-- ## R code 11.18 -->
+<!-- d$side <- d$prosoc_left + 1 # right 1, left 2 -->
+<!-- d$cond <- d$condition + 1 # no partner 1, partner 2 -->
+
+
+
+
+<!-- ## R code 11.19 -->
+<!-- dat_list2 <- list( -->
+<!--     pulled_left = d$pulled_left, -->
+<!--     actor = d$actor, -->
+<!--     side = d$side, -->
+<!--     cond = d$cond ) -->
+<!-- m11.5 <- ulam( -->
+<!--     alist( -->
+<!--         pulled_left ~ dbinom( 1 , p ) , -->
+<!--         logit(p) <- a[actor] + bs[side] + bc[cond] , -->
+<!--         a[actor] ~ dnorm( 0 , 1.5 ), -->
+<!--         bs[side] ~ dnorm( 0 , 0.5 ), -->
+<!--         bc[cond] ~ dnorm( 0 , 0.5 ) -->
+<!--     ) , data=dat_list2 , chains=4 , log_lik=TRUE ) -->
+
+<!-- ## R code 11.20 -->
+<!-- compare( m11.5 , m11.4 , func=PSIS ) -->
+
+<!-- ## R code 11.21 -->
+<!-- post <- extract.samples( m11.4 , clean=FALSE ) -->
+<!-- str(post) -->
+
+<!-- ## R code 11.22 -->
+<!-- m11.4_stan_code <- stancode(m11.4) -->
+<!-- m11.4_stan <- stan( model_code=m11.4_stan_code , data=dat_list , chains=4 ) -->
+<!-- compare( m11.4_stan , m11.4 ) -->
+
+<!-- ``` -->
+
+### Aggregated binmoial model - Berkley admissions. 
+
+This is a small dataset with department, acceptance rate, applicants and sex. 
+```{r}
+## R code 11.28
+suppressMessages(library(rethinking))
+data(UCBadmit)
+d <- UCBadmit
+d
+```
+
+These 12 rows are a summary of ~4500 applications
+```{r}
+sum(d$applications)
+```
+
+
+### A model of admit ~ sex. 
+we make a index variable for sex, and model admit status as a function of sex; here we are saying a indicator term indexed over levels of sex predicts admit status. Admit is binomially distributed with probability p with total count "applications". 
+
+```{r}
+## R code 11.29
+dat_list <- list(
+    admit = d$admit,
+    applications = d$applications,
+    gid = ifelse( d$applicant.gender=="male" , 1 , 2 )
+)
+# formula 
+f11.7 = alist(
+  admit ~ dbinom( applications , p ) ,
+  logit(p) <- a[gid],
+  a[gid] ~ dnorm( 0 , 1.5 )
+)
+# fit model 
+m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
+precis( m11.7 , depth=2 )
+```
+
+The mean for probability of admisssion on the log odds scale is higher for males. Compute the contrast effect sizes on the logit scale and outcome scale. 
+
+The model was fit on the log odds (logit) scale so the contrast on the posterior tells the log odds difference between male and female, below: `diff_a`. If we want to *back transform that to a probability scale* we take the inverse logit transform to get the difference in probability of admission `diff_p`
+
+```{r}
+## R code 11.30
+post <- extract.samples(m11.7)
+diff_a <- post$a[,1] - post$a[,2]
+diff_p <- inv_logit(post$a[,1]) - inv_logit(post$a[,2])
+precis( list( diff_a=diff_a , diff_p=diff_p ) )
+```
+
+```{r}
+par(mfrow = c(1,2))
+hist(diff_a , col = r, breaks = 50, xlab = "M-F difference in log odds");
+hist(diff_p, col = r, breaks = 50, xlab = "M-F difference in prob admit (inv_logit)")
+```
+
+
+```{r}
+## R code 11.31
+postcheck( m11.7 )
+
+```
+
+### Fitting the model with another index variable for department. 
+```{r}
+## R code 11.32
+dat_list$dept_id <- rep(1:6,each=2)
+dat_list
+```
+
+
+```{r}
+f11.8 = alist(
+  admit ~ dbinom(applications, p ),
+  # likelihood 
+  logit(p) <- a[gid] + delta[dept_id], 
+  # priors 
+  a[gid] ~ dnorm( 0 , 1.5 ),
+  delta[dept_id] ~ dnorm( 0 , 1.5 )
+)
+
+m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
+precis( m11.8 , depth=2 )
+```
+
+```{r}
+postcheck(m11.8)
+```
+
+
+
+```{r}
+## R code 11.33
+post <- extract.samples(m11.8)
+diff_a <- post$a[,1] - post$a[,2]
+diff_p <- inv_logit(post$a[,1]) - inv_logit(post$a[,2])
+precis( list( diff_a=diff_a , diff_p=diff_p ) )
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
