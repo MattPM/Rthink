@@ -164,7 +164,7 @@ Strong effects still possible. but these regularizing priors will help reduce ov
 ### fit HMC stan model. 
 
 If this was our central research question its reasonable but this takes ridiculously long to fit. this would not scale well to 20 thousand separately fit models. 
-```{r}
+```{r, results = 'hide'}
 ## R code 11.10
 # trimmed data list
 dat_list <- list(

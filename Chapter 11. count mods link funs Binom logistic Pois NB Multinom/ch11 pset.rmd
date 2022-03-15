@@ -99,6 +99,7 @@ exp(-5)
 using a logit link makes the outcome bounded between 0 and 1.  
 basically if you want to put a upper bound on the estimates. see manual ed 1 p73. One could potentially do this -- a cell does have an upper bound as to what the total counts could be, so we would expect the counts of individual genes to be some fraction of that total; we'd have to define this for eahc cell type and its more a function of the technology used.  
 
+M116 State constraints under which poisson and binomial have maximum entropy
 
 11M8 Kline data without hawaii interaction model  
 
@@ -114,10 +115,6 @@ d = Kline
 d = d[!d$culture == 'Hawaii', ]
 d$pop = log(d$population)
 
-
-# fit frequentist binomial glm with log link
-f1 = total_tools ~ 0 + pop + contact + pop*contact
-m1 = glm(formula = f1, family = poisson(link = 'log'),data = d)
 
 # fit mcmc binomial model 
 f1.1 = alist(
@@ -140,10 +137,27 @@ dat = list(
 # fit model 
 m1.1 = ulam(flist = f1.1, data = dat,cores = 4)
 
+# coefficients
+precis(m1.1, depth = 2)
+
+```
+
+```{r}
+# fit frequentist binomial glm with log link
+f1 = total_tools ~  pop + contact + pop:contact
+m1 = glm(formula = f1, family = poisson(link = 'log'),data = d)
+precis(m1)
 ```
 
 
-ok making up my own problem here want ot compare these outputs to emmeans functions. 
+ ompare these outputs to emmeans functions. 
+
+```{r}
+library(emmeans)
+plot(emmeans(m1))
+emmip(m1, ~contact)
+```
+
 
 
 

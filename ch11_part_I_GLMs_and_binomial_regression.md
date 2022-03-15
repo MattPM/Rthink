@@ -245,146 +245,8 @@ f11.4 = alist(
 
 
 m11.4 <- ulam(f11.4, data=dat_list , chains=4 , log_lik=TRUE)
-```
-
-    ## Running /Library/Frameworks/R.framework/Resources/bin/R CMD SHLIB foo.c
-    ## clang -I"/Library/Frameworks/R.framework/Resources/include" -DNDEBUG   -I"/Library/Frameworks/R.framework/Versions/3.5/Resources/library/Rcpp/include/"  -I"/Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/"  -I"/Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/unsupported"  -I"/Users/matthewmule/Library/R/3.5/library/BH/include" -I"/Users/matthewmule/Library/R/3.5/library/StanHeaders/include/src/"  -I"/Users/matthewmule/Library/R/3.5/library/StanHeaders/include/"  -I"/Users/matthewmule/Library/R/3.5/library/rstan/include" -DEIGEN_NO_DEBUG  -D_REENTRANT  -DBOOST_DISABLE_ASSERTS -DBOOST_PENDING_INTEGER_LOG2_HPP -include stan/math/prim/mat/fun/Eigen.hpp   -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include   -fPIC  -Wall -g -O2  -c foo.c -o foo.o
-    ## In file included from <built-in>:1:
-    ## In file included from /Users/matthewmule/Library/R/3.5/library/StanHeaders/include/stan/math/prim/mat/fun/Eigen.hpp:13:
-    ## In file included from /Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/Eigen/Dense:1:
-    ## In file included from /Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/Eigen/Core:88:
-    ## /Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/Eigen/src/Core/util/Macros.h:613:1: error: unknown type name 'namespace'
-    ## namespace Eigen {
-    ## ^
-    ## /Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/Eigen/src/Core/util/Macros.h:613:16: error: expected ';' after top level declarator
-    ## namespace Eigen {
-    ##                ^
-    ##                ;
-    ## In file included from <built-in>:1:
-    ## In file included from /Users/matthewmule/Library/R/3.5/library/StanHeaders/include/stan/math/prim/mat/fun/Eigen.hpp:13:
-    ## In file included from /Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/Eigen/Dense:1:
-    ## /Library/Frameworks/R.framework/Versions/3.5/Resources/library/RcppEigen/include/Eigen/Core:96:10: fatal error: 'complex' file not found
-    ## #include <complex>
-    ##          ^~~~~~~~~
-    ## 3 errors generated.
-    ## make: *** [foo.o] Error 1
-    ## 
-    ## SAMPLING FOR MODEL '82480dff1a626a42c2ca9de938d65b9d' NOW (CHAIN 1).
-    ## Chain 1: 
-    ## Chain 1: Gradient evaluation took 8.6e-05 seconds
-    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.86 seconds.
-    ## Chain 1: Adjust your expectations accordingly!
-    ## Chain 1: 
-    ## Chain 1: 
-    ## Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
-    ## Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
-    ## Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
-    ## Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
-    ## Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
-    ## Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
-    ## Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
-    ## Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
-    ## Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
-    ## Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
-    ## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
-    ## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
-    ## Chain 1: 
-    ## Chain 1:  Elapsed Time: 0.470824 seconds (Warm-up)
-    ## Chain 1:                0.386418 seconds (Sampling)
-    ## Chain 1:                0.857242 seconds (Total)
-    ## Chain 1: 
-    ## 
-    ## SAMPLING FOR MODEL '82480dff1a626a42c2ca9de938d65b9d' NOW (CHAIN 2).
-    ## Chain 2: 
-    ## Chain 2: Gradient evaluation took 5.6e-05 seconds
-    ## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.56 seconds.
-    ## Chain 2: Adjust your expectations accordingly!
-    ## Chain 2: 
-    ## Chain 2: 
-    ## Chain 2: Iteration:   1 / 1000 [  0%]  (Warmup)
-    ## Chain 2: Iteration: 100 / 1000 [ 10%]  (Warmup)
-    ## Chain 2: Iteration: 200 / 1000 [ 20%]  (Warmup)
-    ## Chain 2: Iteration: 300 / 1000 [ 30%]  (Warmup)
-    ## Chain 2: Iteration: 400 / 1000 [ 40%]  (Warmup)
-    ## Chain 2: Iteration: 500 / 1000 [ 50%]  (Warmup)
-    ## Chain 2: Iteration: 501 / 1000 [ 50%]  (Sampling)
-    ## Chain 2: Iteration: 600 / 1000 [ 60%]  (Sampling)
-    ## Chain 2: Iteration: 700 / 1000 [ 70%]  (Sampling)
-    ## Chain 2: Iteration: 800 / 1000 [ 80%]  (Sampling)
-    ## Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
-    ## Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
-    ## Chain 2: 
-    ## Chain 2:  Elapsed Time: 0.519243 seconds (Warm-up)
-    ## Chain 2:                0.321154 seconds (Sampling)
-    ## Chain 2:                0.840397 seconds (Total)
-    ## Chain 2: 
-    ## 
-    ## SAMPLING FOR MODEL '82480dff1a626a42c2ca9de938d65b9d' NOW (CHAIN 3).
-    ## Chain 3: 
-    ## Chain 3: Gradient evaluation took 6e-05 seconds
-    ## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.6 seconds.
-    ## Chain 3: Adjust your expectations accordingly!
-    ## Chain 3: 
-    ## Chain 3: 
-    ## Chain 3: Iteration:   1 / 1000 [  0%]  (Warmup)
-    ## Chain 3: Iteration: 100 / 1000 [ 10%]  (Warmup)
-    ## Chain 3: Iteration: 200 / 1000 [ 20%]  (Warmup)
-    ## Chain 3: Iteration: 300 / 1000 [ 30%]  (Warmup)
-    ## Chain 3: Iteration: 400 / 1000 [ 40%]  (Warmup)
-    ## Chain 3: Iteration: 500 / 1000 [ 50%]  (Warmup)
-    ## Chain 3: Iteration: 501 / 1000 [ 50%]  (Sampling)
-    ## Chain 3: Iteration: 600 / 1000 [ 60%]  (Sampling)
-    ## Chain 3: Iteration: 700 / 1000 [ 70%]  (Sampling)
-    ## Chain 3: Iteration: 800 / 1000 [ 80%]  (Sampling)
-    ## Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
-    ## Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
-    ## Chain 3: 
-    ## Chain 3:  Elapsed Time: 0.491864 seconds (Warm-up)
-    ## Chain 3:                0.37279 seconds (Sampling)
-    ## Chain 3:                0.864654 seconds (Total)
-    ## Chain 3: 
-    ## 
-    ## SAMPLING FOR MODEL '82480dff1a626a42c2ca9de938d65b9d' NOW (CHAIN 4).
-    ## Chain 4: 
-    ## Chain 4: Gradient evaluation took 5.9e-05 seconds
-    ## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.59 seconds.
-    ## Chain 4: Adjust your expectations accordingly!
-    ## Chain 4: 
-    ## Chain 4: 
-    ## Chain 4: Iteration:   1 / 1000 [  0%]  (Warmup)
-    ## Chain 4: Iteration: 100 / 1000 [ 10%]  (Warmup)
-    ## Chain 4: Iteration: 200 / 1000 [ 20%]  (Warmup)
-    ## Chain 4: Iteration: 300 / 1000 [ 30%]  (Warmup)
-    ## Chain 4: Iteration: 400 / 1000 [ 40%]  (Warmup)
-    ## Chain 4: Iteration: 500 / 1000 [ 50%]  (Warmup)
-    ## Chain 4: Iteration: 501 / 1000 [ 50%]  (Sampling)
-    ## Chain 4: Iteration: 600 / 1000 [ 60%]  (Sampling)
-    ## Chain 4: Iteration: 700 / 1000 [ 70%]  (Sampling)
-    ## Chain 4: Iteration: 800 / 1000 [ 80%]  (Sampling)
-    ## Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
-    ## Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
-    ## Chain 4: 
-    ## Chain 4:  Elapsed Time: 0.42815 seconds (Warm-up)
-    ## Chain 4:                0.340795 seconds (Sampling)
-    ## Chain 4:                0.768945 seconds (Total)
-    ## Chain 4:
-
-``` r
 precis( m11.4 , depth=2 )
 ```
-
-    ##             mean        sd        5.5%       94.5%     n_eff     Rhat4
-    ## a[1] -0.45642629 0.3477435 -1.01318764  0.09523512  614.8645 1.0000542
-    ## a[2]  3.88682837 0.7227322  2.80040209  5.11843419 1471.2153 1.0009275
-    ## a[3] -0.75063656 0.3363033 -1.31493135 -0.23030060  648.5380 1.0015048
-    ## a[4] -0.76124169 0.3421155 -1.30706452 -0.20818540  566.1462 1.0025290
-    ## a[5] -0.46091281 0.3369121 -1.00762028  0.06616788  631.0298 0.9992719
-    ## a[6]  0.46639103 0.3419080 -0.08814385  1.00046011  543.3119 1.0016696
-    ## a[7]  1.94304138 0.4348036  1.25204631  2.68025204  821.7180 1.0014386
-    ## b[1] -0.03074828 0.2949858 -0.49803371  0.45067799  565.9269 1.0013012
-    ## b[2]  0.48927316 0.2919955  0.01573074  0.95312804  516.1493 1.0015648
-    ## b[3] -0.37039709 0.2929954 -0.83303525  0.09380429  542.2040 0.9999995
-    ## b[4]  0.37756874 0.2932367 -0.10293106  0.84357819  557.5963 1.0000941
 
 ### Examining model posterior distributions
 
@@ -644,8 +506,8 @@ m11.6 <- ulam(f11.6,data=dat , chains=4 , log_lik=TRUE )
     ## 
     ## SAMPLING FOR MODEL '79cee3368c3337e807538171c896ad26' NOW (CHAIN 1).
     ## Chain 1: 
-    ## Chain 1: Gradient evaluation took 2.2e-05 seconds
-    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+    ## Chain 1: Gradient evaluation took 1.9e-05 seconds
+    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
     ## Chain 1: Adjust your expectations accordingly!
     ## Chain 1: 
     ## Chain 1: 
@@ -662,15 +524,15 @@ m11.6 <- ulam(f11.6,data=dat , chains=4 , log_lik=TRUE )
     ## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 1: 
-    ## Chain 1:  Elapsed Time: 0.05911 seconds (Warm-up)
-    ## Chain 1:                0.058062 seconds (Sampling)
-    ## Chain 1:                0.117172 seconds (Total)
+    ## Chain 1:  Elapsed Time: 0.060724 seconds (Warm-up)
+    ## Chain 1:                0.055754 seconds (Sampling)
+    ## Chain 1:                0.116478 seconds (Total)
     ## Chain 1: 
     ## 
     ## SAMPLING FOR MODEL '79cee3368c3337e807538171c896ad26' NOW (CHAIN 2).
     ## Chain 2: 
-    ## Chain 2: Gradient evaluation took 1e-05 seconds
-    ## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
+    ## Chain 2: Gradient evaluation took 9e-06 seconds
+    ## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.09 seconds.
     ## Chain 2: Adjust your expectations accordingly!
     ## Chain 2: 
     ## Chain 2: 
@@ -687,9 +549,9 @@ m11.6 <- ulam(f11.6,data=dat , chains=4 , log_lik=TRUE )
     ## Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 2: 
-    ## Chain 2:  Elapsed Time: 0.061813 seconds (Warm-up)
-    ## Chain 2:                0.050896 seconds (Sampling)
-    ## Chain 2:                0.112709 seconds (Total)
+    ## Chain 2:  Elapsed Time: 0.063831 seconds (Warm-up)
+    ## Chain 2:                0.049877 seconds (Sampling)
+    ## Chain 2:                0.113708 seconds (Total)
     ## Chain 2: 
     ## 
     ## SAMPLING FOR MODEL '79cee3368c3337e807538171c896ad26' NOW (CHAIN 3).
@@ -712,9 +574,9 @@ m11.6 <- ulam(f11.6,data=dat , chains=4 , log_lik=TRUE )
     ## Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 3: 
-    ## Chain 3:  Elapsed Time: 0.058207 seconds (Warm-up)
-    ## Chain 3:                0.061188 seconds (Sampling)
-    ## Chain 3:                0.119395 seconds (Total)
+    ## Chain 3:  Elapsed Time: 0.059943 seconds (Warm-up)
+    ## Chain 3:                0.064836 seconds (Sampling)
+    ## Chain 3:                0.124779 seconds (Total)
     ## Chain 3: 
     ## 
     ## SAMPLING FOR MODEL '79cee3368c3337e807538171c896ad26' NOW (CHAIN 4).
@@ -737,9 +599,9 @@ m11.6 <- ulam(f11.6,data=dat , chains=4 , log_lik=TRUE )
     ## Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 4: 
-    ## Chain 4:  Elapsed Time: 0.052763 seconds (Warm-up)
-    ## Chain 4:                0.052984 seconds (Sampling)
-    ## Chain 4:                0.105747 seconds (Total)
+    ## Chain 4:  Elapsed Time: 0.055516 seconds (Warm-up)
+    ## Chain 4:                0.055546 seconds (Sampling)
+    ## Chain 4:                0.111062 seconds (Total)
     ## Chain 4:
 
 ``` r
@@ -960,8 +822,8 @@ m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
     ## 
     ## SAMPLING FOR MODEL '92bf1800293ab05bf80648b931ab8346' NOW (CHAIN 1).
     ## Chain 1: 
-    ## Chain 1: Gradient evaluation took 1.8e-05 seconds
-    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
+    ## Chain 1: Gradient evaluation took 1.7e-05 seconds
+    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
     ## Chain 1: Adjust your expectations accordingly!
     ## Chain 1: 
     ## Chain 1: 
@@ -978,9 +840,9 @@ m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
     ## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 1: 
-    ## Chain 1:  Elapsed Time: 0.016544 seconds (Warm-up)
-    ## Chain 1:                0.016084 seconds (Sampling)
-    ## Chain 1:                0.032628 seconds (Total)
+    ## Chain 1:  Elapsed Time: 0.017238 seconds (Warm-up)
+    ## Chain 1:                0.015345 seconds (Sampling)
+    ## Chain 1:                0.032583 seconds (Total)
     ## Chain 1: 
     ## 
     ## SAMPLING FOR MODEL '92bf1800293ab05bf80648b931ab8346' NOW (CHAIN 2).
@@ -1003,15 +865,15 @@ m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
     ## Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 2: 
-    ## Chain 2:  Elapsed Time: 0.016289 seconds (Warm-up)
-    ## Chain 2:                0.016817 seconds (Sampling)
-    ## Chain 2:                0.033106 seconds (Total)
+    ## Chain 2:  Elapsed Time: 0.01556 seconds (Warm-up)
+    ## Chain 2:                0.016607 seconds (Sampling)
+    ## Chain 2:                0.032167 seconds (Total)
     ## Chain 2: 
     ## 
     ## SAMPLING FOR MODEL '92bf1800293ab05bf80648b931ab8346' NOW (CHAIN 3).
     ## Chain 3: 
-    ## Chain 3: Gradient evaluation took 6e-06 seconds
-    ## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.06 seconds.
+    ## Chain 3: Gradient evaluation took 7e-06 seconds
+    ## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
     ## Chain 3: Adjust your expectations accordingly!
     ## Chain 3: 
     ## Chain 3: 
@@ -1028,15 +890,15 @@ m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
     ## Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 3: 
-    ## Chain 3:  Elapsed Time: 0.018473 seconds (Warm-up)
-    ## Chain 3:                0.015829 seconds (Sampling)
-    ## Chain 3:                0.034302 seconds (Total)
+    ## Chain 3:  Elapsed Time: 0.019154 seconds (Warm-up)
+    ## Chain 3:                0.015846 seconds (Sampling)
+    ## Chain 3:                0.035 seconds (Total)
     ## Chain 3: 
     ## 
     ## SAMPLING FOR MODEL '92bf1800293ab05bf80648b931ab8346' NOW (CHAIN 4).
     ## Chain 4: 
-    ## Chain 4: Gradient evaluation took 7e-06 seconds
-    ## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
+    ## Chain 4: Gradient evaluation took 6e-06 seconds
+    ## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.06 seconds.
     ## Chain 4: Adjust your expectations accordingly!
     ## Chain 4: 
     ## Chain 4: 
@@ -1053,9 +915,9 @@ m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
     ## Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
     ## Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
     ## Chain 4: 
-    ## Chain 4:  Elapsed Time: 0.016636 seconds (Warm-up)
-    ## Chain 4:                0.016723 seconds (Sampling)
-    ## Chain 4:                0.033359 seconds (Total)
+    ## Chain 4:  Elapsed Time: 0.017155 seconds (Warm-up)
+    ## Chain 4:                0.017804 seconds (Sampling)
+    ## Chain 4:                0.034959 seconds (Total)
     ## Chain 4:
 
 ``` r
@@ -1160,8 +1022,8 @@ m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
     ## 
     ## SAMPLING FOR MODEL 'eefef2dd38cd530185967a7d0d74fe47' NOW (CHAIN 1).
     ## Chain 1: 
-    ## Chain 1: Gradient evaluation took 1.8e-05 seconds
-    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
+    ## Chain 1: Gradient evaluation took 2e-05 seconds
+    ## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
     ## Chain 1: Adjust your expectations accordingly!
     ## Chain 1: 
     ## Chain 1: 
@@ -1178,15 +1040,15 @@ m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
     ## Chain 1: Iteration: 3600 / 4000 [ 90%]  (Sampling)
     ## Chain 1: Iteration: 4000 / 4000 [100%]  (Sampling)
     ## Chain 1: 
-    ## Chain 1:  Elapsed Time: 0.400316 seconds (Warm-up)
-    ## Chain 1:                0.396502 seconds (Sampling)
-    ## Chain 1:                0.796818 seconds (Total)
+    ## Chain 1:  Elapsed Time: 0.372619 seconds (Warm-up)
+    ## Chain 1:                0.371179 seconds (Sampling)
+    ## Chain 1:                0.743798 seconds (Total)
     ## Chain 1: 
     ## 
     ## SAMPLING FOR MODEL 'eefef2dd38cd530185967a7d0d74fe47' NOW (CHAIN 2).
     ## Chain 2: 
-    ## Chain 2: Gradient evaluation took 9e-06 seconds
-    ## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.09 seconds.
+    ## Chain 2: Gradient evaluation took 1e-05 seconds
+    ## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
     ## Chain 2: Adjust your expectations accordingly!
     ## Chain 2: 
     ## Chain 2: 
@@ -1203,15 +1065,15 @@ m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
     ## Chain 2: Iteration: 3600 / 4000 [ 90%]  (Sampling)
     ## Chain 2: Iteration: 4000 / 4000 [100%]  (Sampling)
     ## Chain 2: 
-    ## Chain 2:  Elapsed Time: 0.397734 seconds (Warm-up)
-    ## Chain 2:                0.409652 seconds (Sampling)
-    ## Chain 2:                0.807386 seconds (Total)
+    ## Chain 2:  Elapsed Time: 0.371504 seconds (Warm-up)
+    ## Chain 2:                0.400922 seconds (Sampling)
+    ## Chain 2:                0.772426 seconds (Total)
     ## Chain 2: 
     ## 
     ## SAMPLING FOR MODEL 'eefef2dd38cd530185967a7d0d74fe47' NOW (CHAIN 3).
     ## Chain 3: 
-    ## Chain 3: Gradient evaluation took 7e-06 seconds
-    ## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
+    ## Chain 3: Gradient evaluation took 1.2e-05 seconds
+    ## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
     ## Chain 3: Adjust your expectations accordingly!
     ## Chain 3: 
     ## Chain 3: 
@@ -1228,15 +1090,15 @@ m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
     ## Chain 3: Iteration: 3600 / 4000 [ 90%]  (Sampling)
     ## Chain 3: Iteration: 4000 / 4000 [100%]  (Sampling)
     ## Chain 3: 
-    ## Chain 3:  Elapsed Time: 0.403313 seconds (Warm-up)
-    ## Chain 3:                0.400877 seconds (Sampling)
-    ## Chain 3:                0.80419 seconds (Total)
+    ## Chain 3:  Elapsed Time: 0.400678 seconds (Warm-up)
+    ## Chain 3:                0.373846 seconds (Sampling)
+    ## Chain 3:                0.774524 seconds (Total)
     ## Chain 3: 
     ## 
     ## SAMPLING FOR MODEL 'eefef2dd38cd530185967a7d0d74fe47' NOW (CHAIN 4).
     ## Chain 4: 
-    ## Chain 4: Gradient evaluation took 8e-06 seconds
-    ## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+    ## Chain 4: Gradient evaluation took 1e-05 seconds
+    ## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
     ## Chain 4: Adjust your expectations accordingly!
     ## Chain 4: 
     ## Chain 4: 
@@ -1253,9 +1115,9 @@ m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
     ## Chain 4: Iteration: 3600 / 4000 [ 90%]  (Sampling)
     ## Chain 4: Iteration: 4000 / 4000 [100%]  (Sampling)
     ## Chain 4: 
-    ## Chain 4:  Elapsed Time: 0.408898 seconds (Warm-up)
-    ## Chain 4:                0.40813 seconds (Sampling)
-    ## Chain 4:                0.817028 seconds (Total)
+    ## Chain 4:  Elapsed Time: 0.383716 seconds (Warm-up)
+    ## Chain 4:                0.387229 seconds (Sampling)
+    ## Chain 4:                0.770945 seconds (Total)
     ## Chain 4:
 
 ``` r
