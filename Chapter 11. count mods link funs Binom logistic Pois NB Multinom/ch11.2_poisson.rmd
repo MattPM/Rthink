@@ -3,18 +3,6 @@ title: 'Ch 11 part II: Poisson and Gamma Poisson (NB) regression'
 output: github_document
 ---
 
-```{r, show = FALSE}
-knitr::opts_chunk$set(
-  #tidy = TRUE,
-  #tidy.opts = list(width.cutoff = 95),
-  message = FALSE,
-  warning = TRUE, 
-  eval = TRUE
-  # root.dir = here()
-)
-```
-
-
 ```{r}
 r = 'deepskyblue3'
 suppressMessages(library(rethinking))

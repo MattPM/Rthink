@@ -3,20 +3,6 @@ title: 'Ch 11 part I: GLMs and binomial regression'
 output: github_document
 ---
 
-```{r}
-knitr::opts_chunk$set(
-  #tidy = TRUE,
-  #tidy.opts = list(width.cutoff = 95),
-  message = FALSE,
-  warning = TRUE, 
-  eval = TRUE
-  # root.dir = here()
-)
-
-
-```
-
-
 
 Generalized linear models for counts. 
 
@@ -335,7 +321,7 @@ dat
 ```
 
 here the 18 is the sum for each individual; doesnt have to be hard coded. 
-```{r}
+```{r, results = 'hide'}
 f11.6 = alist(
   left_pulls ~ dbinom( 18 , p ) ,
   logit(p) <- a[actor] + b[treatment] ,
@@ -428,7 +414,7 @@ sum(d$applications)
 ### A model of admit ~ sex. 
 we make a index variable for sex, and model admit status as a function of sex; here we are saying a indicator term indexed over levels of sex predicts admit status. Admit is binomially distributed with probability p with total count "applications". 
 
-```{r}
+```{r, results = 'hide'}
 ## R code 11.29
 dat_list <- list(
     admit = d$admit,
@@ -479,7 +465,7 @@ dat_list
 ```
 
 
-```{r}
+```{r, results = 'hide'}
 f11.8 = alist(
   admit ~ dbinom(applications, p ),
   # likelihood 

@@ -73,28 +73,58 @@ adjustmentSets(dag, exposure = 'x', outcome = 'y')
 #>  {}
 ```
 
-### Specify model formula
+### Specify model formula and fit using mcmc (or quadratic approximation)
 
 ``` r
 f1 = alist( 
   # estimand
   y ~ dnorm(mu, sigma),
   # likelihood
-  mu <- alpha + (Bx*x), 
+  mu <- alpha + Bx*x, 
   # priors 
   alpha ~ dnorm(0,0.5), 
   Bx ~ dnorm(0,0.5), 
   sigma ~ dexp(1)
   )
-```
 
-### fit model with MCMC or quadratic approximation
-
-``` r
 # fit model 
 m1 = quap(flist = f1,data = d)
 # m1 = ulam(flist = f1,data = d)
+
+# summary of model fit
+precis(m1, depth = 2)
+#>            mean         sd      5.5%     94.5%
+#> alpha 1.9631489 0.05145478 1.8809143 2.0453836
+#> Bx    1.0430971 0.20647950 0.7131030 1.3730912
+#> sigma 0.3409979 0.03469045 0.2855558 0.3964399
 ```
+
+### calculate and visualize uncertainty in parameter estimates and prediction intervals of simulated data based on model
+
+``` r
+# specify interval of predictor values to simulate over
+# multivariate models -- include other predictors 
+xseq = seq(-2,2, length.out = 30)
+
+# summarize estimand based on new predictor values
+mu = link(m1, data = data.frame(x = xseq))
+mu.mean = apply(mu, 2, mean)
+mu.PI = apply(mu, 2, PI)
+
+# simulate uncertainty in estimates based on full model 
+dsim = sim(fit = m1, data = data.frame(x = xseq))
+sim.pi = apply(dsim, 2, PI)
+
+# plot summary
+plot(y ~ x, d, col = rangi2, pch = 16)
+lines(x = xseq,y = mu.mean, lwd = 3) # mean
+shade(object = mu.PI, lim = xseq) # mean uncertainty
+shade(object = sim.pi,lim = xseq)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+## Other topics
 
 ### prior predictive simulation
 
@@ -130,20 +160,6 @@ precis(m1)
 #> Bx    1.0430971 0.20647950 0.7131030 1.3730912
 #> sigma 0.3409979 0.03469045 0.2855558 0.3964399
 ```
-
-### plot predictied and 89% compatibility intervals for the mean
-
-``` r
-sim.x = seq(-2, 2,length.out = 50)
-# extract posterior distributions for 50 simulated x values 
-post = link(m1, data = data.frame(x = sim.x))
-
-plot(y ~ x , d, col = rangi2)
-lines(sim.x, apply(post,2,mean))
-shade(apply(post, 2, PI), sim.x)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ### View stan code for the model
 

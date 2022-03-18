@@ -68,27 +68,52 @@ adjustmentSets(dag, exposure = 'x', outcome = 'y')
 ```
 
 
-### Specify model formula 
+### Specify model formula and fit using mcmc (or quadratic approximation)
 ```{r}
 f1 = alist( 
   # estimand
   y ~ dnorm(mu, sigma),
   # likelihood
-  mu <- alpha + (Bx*x), 
+  mu <- alpha + Bx*x, 
   # priors 
   alpha ~ dnorm(0,0.5), 
   Bx ~ dnorm(0,0.5), 
   sigma ~ dexp(1)
   )
 
-```
-
-### fit model with MCMC or quadratic approximation
-```{r}
 # fit model 
 m1 = quap(flist = f1,data = d)
 # m1 = ulam(flist = f1,data = d)
+
+# summary of model fit
+precis(m1, depth = 2)
 ```
+
+### calculate and visualize uncertainty in parameter estimates and prediction intervals of simulated data based on model
+
+```{r, fig.width=4, fig.height=4}
+# specify interval of predictor values to simulate over
+# multivariate models -- include other predictors 
+xseq = seq(-2,2, length.out = 30)
+
+# summarize estimand based on new predictor values
+mu = link(m1, data = data.frame(x = xseq))
+mu.mean = apply(mu, 2, mean)
+mu.PI = apply(mu, 2, PI)
+
+# simulate uncertainty in estimates based on full model 
+dsim = sim(fit = m1, data = data.frame(x = xseq))
+sim.pi = apply(dsim, 2, PI)
+
+# plot summary
+plot(y ~ x, d, col = rangi2, pch = 16)
+lines(x = xseq,y = mu.mean, lwd = 3) # mean
+shade(object = mu.PI, lim = xseq) # mean uncertainty
+shade(object = sim.pi,lim = xseq)
+```
+
+
+## Other topics
 
 ### prior predictive simulation 
 ```{r, fig.width=3, fig.height=3}
@@ -116,19 +141,6 @@ for (i in 1:100) {
 ```{r}
 # note set depth = 2 for more complex models 
 precis(m1)
-```
-
-### plot predictied and 89% compatibility intervals for the mean 
-
-```{r, fig.width=3, fig.height=3}
-sim.x = seq(-2, 2,length.out = 50)
-# extract posterior distributions for 50 simulated x values 
-post = link(m1, data = data.frame(x = sim.x))
-
-plot(y ~ x , d, col = rangi2)
-lines(sim.x, apply(post,2,mean))
-shade(apply(post, 2, PI), sim.x)
-
 ```
 
 ### View stan code for the model 
