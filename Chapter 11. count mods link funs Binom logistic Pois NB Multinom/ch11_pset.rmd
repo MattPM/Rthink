@@ -190,25 +190,61 @@ shade(mu2.pi, lim = pop.lim)
 
 compare to frequentist glm fit 
 
+
 ```{r}
 # fit frequentist binomial glm with log link
-f1 = total_tools ~  pop + contact + pop:contact
-m1 = glm(formula = f1, family = poisson(link = 'log'),data = d)
-precis(m1)
+
+d$con.id = ifelse(d$contact == 'low', 0, 1) 
+f1 = total_tools ~  pop + con.id + pop:con.id
+m2 = glm(formula = f1, family = poisson(link = 'log'),data = d)
+precis(m2)
 ```
 
 
+Interpretation of coefficients:   
+(intercept) - Y intercept for the baseline reference group 'low contact'  
+1.32  
+b1 = pop = slope or the baseline group  
+0.22  
+
+regression equation for low contact reference group  
+y = 1.32 + (0.22 * xi)  
+
+b2 = conid = offset for the y intercepy for the alternate group 'high contact'  
+-0.69  
+b3 = offset to the slope of the alternative group compared to the reference group high vs low  
+0.11  
+
+regression equation for the low contact group  
+y = (1.32 +  -0.69 ) + (0.11 + 0.22 * xi)   
+
+
 ```{r}
-par(mfrow = c(1,2))
+precis(m1.1, depth = 2)
+```
+
+
+
+```{r}
+par(mfrow = c(2,2))
 
 plot(
-  exp(predict(m1, newdata = data.frame(pop =  dat$pop, contact = 'high'))), 
-  pch = 16, col = rangi2)
+  exp(predict(m2, newdata = data.frame(pop =  d$pop, con.id = 1))), 
+  pch = 16, col = 'blue')
+plot(
+  exp(predict(m2, newdata = data.frame(pop =  d$pop, con.id = 0))), 
+  pch = 16, col = 'blue')
 
 plot(
   exp(mean(post$a[,1]) + mean(post$B[ ,1])*dat$pop), 
   pch = 16, col = rangi2
   )
+
+plot(
+  exp(mean(post$a[,2]) + mean(post$B[ ,2])*dat$pop), 
+  pch = 16, col = rangi2
+  )
+
 ```
 
 11H3  

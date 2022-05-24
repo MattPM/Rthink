@@ -11,15 +11,15 @@ Logistic and aggregated binomial regression are generalizations of binomial regr
 see p 325 for experiment description. 
 
 
-first quickly plot the actual outcome data per actor bc i dont understand what i am acually trying to model here. ok understand now; each actor was tested multiple times under different treatment conditions; the outcome variable is the percentage of time the actor pulled left but pulling left is a different thing depending on the treatment. 
-the point of hte treatment vars for no food present is to determine the handedness of the animal / prefernce if there is one. 
+Each actor was tested multiple times under different treatment conditions; the outcome variable is the percentage of time the actor pulled left but pulling left is a different thing depending on the treatment. 
+the point of the treatment vars for no food present is to determine the handedness of the animal / prefernce if there is one. 
 
 1 = 2 food R, no partner  
 2 = 2 food L, no partner  
 3 = 2 food R, partner  
 4 = 2 food L, partner  
 
-Key - there is always food for the animal on both sides they can pull left or right and get food. Only by pulling right do they help out the other guy. 
+Key - there is always food for the animal on both sides they can pull left or right and get food. Only by pulling right do they help out the other guy. We're looking for evidence of impalance in left pulls as a function of a treatment variable (partner presence). 
 
 ```{r}
 ## R code 11.1
@@ -393,109 +393,4 @@ The aggregated format can be better for multilevel models.
 <!-- compare( m11.4_stan , m11.4 ) -->
 
 <!-- ``` -->
-
-### Aggregated binmoial model - Berkley admissions. 
-
-This is a small dataset with department, acceptance rate, applicants and sex. 
-```{r}
-## R code 11.28
-suppressMessages(library(rethinking))
-data(UCBadmit)
-d <- UCBadmit
-d
-```
-
-These 12 rows are a summary of ~4500 applications
-```{r}
-sum(d$applications)
-```
-
-
-### A model of admit ~ sex. 
-we make a index variable for sex, and model admit status as a function of sex; here we are saying a indicator term indexed over levels of sex predicts admit status. Admit is binomially distributed with probability p with total count "applications". 
-
-```{r, results = 'hide'}
-## R code 11.29
-dat_list <- list(
-    admit = d$admit,
-    applications = d$applications,
-    gid = ifelse( d$applicant.gender=="male" , 1 , 2 )
-)
-# formula 
-f11.7 = alist(
-  admit ~ dbinom( applications , p ) ,
-  logit(p) <- a[gid],
-  a[gid] ~ dnorm( 0 , 1.5 )
-)
-# fit model 
-m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
-precis( m11.7 , depth=2 )
-```
-
-The mean for probability of admisssion on the log odds scale is higher for males. Compute the contrast effect sizes on the logit scale and outcome scale. 
-
-The model was fit on the log odds (logit) scale so the contrast on the posterior tells the log odds difference between male and female, below: `diff_a`. If we want to *back transform that to a probability scale* we take the inverse logit transform to get the difference in probability of admission `diff_p`
-
-```{r}
-## R code 11.30
-post <- extract.samples(m11.7)
-diff_a <- post$a[,1] - post$a[,2]
-diff_p <- inv_logit(post$a[,1]) - inv_logit(post$a[,2])
-precis( list( diff_a=diff_a , diff_p=diff_p ) )
-```
-
-```{r}
-par(mfrow = c(1,2))
-hist(diff_a , col = r, breaks = 50, xlab = "M-F difference in log odds");
-hist(diff_p, col = r, breaks = 50, xlab = "M-F difference in prob admit (inv_logit)")
-```
-
-
-```{r}
-## R code 11.31
-postcheck( m11.7 )
-
-```
-
-### Fitting the model with another index variable for department. 
-```{r}
-## R code 11.32
-dat_list$dept_id <- rep(1:6,each=2)
-dat_list
-```
-
-
-```{r, results = 'hide'}
-f11.8 = alist(
-  admit ~ dbinom(applications, p ),
-  # likelihood 
-  logit(p) <- a[gid] + delta[dept_id], 
-  # priors 
-  a[gid] ~ dnorm( 0 , 1.5 ),
-  delta[dept_id] ~ dnorm( 0 , 1.5 )
-)
-
-m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
-precis( m11.8 , depth=2 )
-```
-
-```{r}
-postcheck(m11.8)
-```
-
-
-
-```{r}
-## R code 11.33
-post <- extract.samples(m11.8)
-diff_a <- post$a[,1] - post$a[,2]
-diff_p <- inv_logit(post$a[,1]) - inv_logit(post$a[,2])
-precis( list( diff_a=diff_a , diff_p=diff_p ) )
-```
-
-
-```{r}
-sessionInfo()
-```
-
 

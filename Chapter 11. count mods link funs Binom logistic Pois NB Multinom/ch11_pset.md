@@ -266,31 +266,72 @@ compare to frequentist glm fit
 
 ``` r
 # fit frequentist binomial glm with log link
-f1 = total_tools ~  pop + contact + pop:contact
-m1 = glm(formula = f1, family = poisson(link = 'log'),data = d)
-precis(m1)
+
+d$con.id = ifelse(d$contact == 'low', 0, 1) 
+f1 = total_tools ~  pop + con.id + pop:con.id
+m2 = glm(formula = f1, family = poisson(link = 'log'),data = d)
+precis(m2)
 ```
 
-    ##                      mean        sd        5.5%     94.5%
-    ## (Intercept)     0.6250813 1.5349121 -1.82800474 3.0781673
-    ## pop             0.3316524 0.1682311  0.06278659 0.6005181
-    ## contactlow      0.6938106 1.7735513 -2.14066699 3.5282881
-    ## pop:contactlow -0.1142124 0.1996576 -0.43330374 0.2048790
+    ##                   mean        sd        5.5%     94.5%
+    ## (Intercept)  1.3188919 0.8885545 -0.10118977 2.7389735
+    ## pop          0.2174400 0.1075242  0.04559558 0.3892844
+    ## con.id      -0.6938106 1.7735513 -3.52828812 2.1406670
+    ## pop:con.id   0.1142124 0.1996576 -0.20487898 0.4333037
+
+Interpretation of coefficients:  
+(intercept) - Y intercept for the baseline reference group ‘low
+contact’  
+1.32  
+b1 = pop = slope or the baseline group  
+0.22
+
+regression equation for low contact reference group  
+y = 1.32 + (0.22 \* xi)
+
+b2 = conid = offset for the y intercepy for the alternate group ‘high
+contact’  
+\-0.69  
+b3 = offset to the slope of the alternative group compared to the
+reference group high vs low  
+0.11
+
+regression equation for the low contact group  
+y = (1.32 + -0.69 ) + (0.11 + 0.22 \*
+    xi)
 
 ``` r
-par(mfrow = c(1,2))
+precis(m1.1, depth = 2)
+```
+
+    ##            mean         sd        5.5%      94.5%    n_eff     Rhat4
+    ## a[1] 2.96182176 0.28072949  2.50262723 3.39491841 227.4898 1.0061881
+    ## a[2] 2.86326689 0.27369350  2.45207797 3.31436592 196.1047 0.9999053
+    ## B[1] 0.07427456 0.03150094  0.02381760 0.12431253 240.7092 1.0056578
+    ## B[2] 0.02829464 0.03588428 -0.03456683 0.08395578 184.4798 0.9998972
+
+``` r
+par(mfrow = c(2,2))
 
 plot(
-  exp(predict(m1, newdata = data.frame(pop =  dat$pop, contact = 'high'))), 
-  pch = 16, col = rangi2)
+  exp(predict(m2, newdata = data.frame(pop =  d$pop, con.id = 1))), 
+  pch = 16, col = 'blue')
+plot(
+  exp(predict(m2, newdata = data.frame(pop =  d$pop, con.id = 0))), 
+  pch = 16, col = 'blue')
 
 plot(
   exp(mean(post$a[,1]) + mean(post$B[ ,1])*dat$pop), 
   pch = 16, col = rangi2
   )
+
+plot(
+  exp(mean(post$a[,2]) + mean(post$B[ ,2])*dat$pop), 
+  pch = 16, col = rangi2
+  )
 ```
 
-![](ch11_pset_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](ch11_pset_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 11H3
 
@@ -316,7 +357,7 @@ dlist = list(
 pairs(dlist, col = rangi2, pch = 16)
 ```
 
-![](ch11_pset_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](ch11_pset_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 it looks like old growth forests have increased ground cover based on
 pct ~ age. Once the forest hits a certain percentage the salmon
@@ -342,15 +383,15 @@ m1 <- ulam(flist = f1, data = dlist, chains = 4, cores = 4)
 trankplot(m1)
 ```
 
-![](ch11_pset_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](ch11_pset_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 precis(m1)
 ```
 
-    ##        mean        sd      5.5%     94.5%    n_eff    Rhat4
-    ## b 1.1621025 0.1832245 0.8773138 1.4614119 451.7618 1.006363
-    ## a 0.4139804 0.1507255 0.1759496 0.6503762 479.1354 1.006637
+    ##       mean        sd      5.5%     94.5%    n_eff    Rhat4
+    ## b 1.137885 0.1724942 0.8739675 1.4233835 601.7771 1.003465
+    ## a 0.431753 0.1417133 0.2031508 0.6534903 547.0473 1.002759
 
 ``` r
 # extract parameters 
@@ -359,24 +400,25 @@ head(post)
 ```
 
     ## $b
-    ##  [1] 1.3899719 0.9848315 1.1105280 1.2500895 1.3157950 1.2666473 1.1746639
-    ##  [8] 1.1113239 1.2481761 0.9298945 0.9246618 1.2725582 1.1446831 1.1844731
-    ## [15] 0.8580935 1.2850709 1.2486840 1.1528623 1.0209209 1.3453694 1.0045400
-    ## [22] 1.1516852 1.3073858 1.0949009 0.8371926 1.1611149 1.4395357 1.0195830
-    ## [29] 1.0094839 1.0531873 1.1842098 1.4091014 1.0579197 0.9267113 1.3599678
-    ## [36] 1.1028129 1.2950466 0.9285571 1.2339387 1.1971323 0.9476554 1.2155894
-    ## [43] 1.3678317 0.8696366 0.8572579 1.4778445 0.8953100 0.9731468 1.1270411
-    ## [50] 1.2225455
+    ##  [1] 0.9555929 1.2825958 1.5468328 1.0634902 1.6107719 1.2803444 0.9223248
+    ##  [8] 1.2085722 1.1313128 1.2252885 1.1511575 1.1768188 0.8740236 1.4068096
+    ## [15] 1.3513733 1.4732654 1.0242242 1.2719923 1.1255519 1.2106576 0.9422423
+    ## [22] 1.1671464 0.9763960 1.4933063 1.2223957 1.4298885 1.0049393 1.1589405
+    ## [29] 1.2088814 0.9623257 1.1260404 1.2393074 1.3496300 0.9291431 1.2206181
+    ## [36] 0.9812968 1.0723348 0.8271347 1.1728695 1.2393730 0.8634603 1.4524782
+    ## [43] 1.0545215 0.9906052 1.0457508 0.9260136 1.2658268 1.2735204 1.3237081
+    ## [50] 1.2750220
     ## 
     ## $a
-    ##  [1] 0.2019868 0.4603918 0.3712874 0.1907964 0.3152179 0.2726432 0.3892916
-    ##  [8] 0.6123657 0.3957678 0.4574073 0.4476871 0.4423211 0.5201230 0.4120975
-    ## [15] 0.7238909 0.2165338 0.4186749 0.3452994 0.5985974 0.3026558 0.6468276
-    ## [22] 0.3493443 0.1493897 0.4667353 0.5659756 0.5652136 0.2187654 0.4149490
-    ## [29] 0.4683906 0.4752281 0.3852098 0.2029520 0.4655038 0.4834354 0.3305080
-    ## [36] 0.4839490 0.4268560 0.5423129 0.3004032 0.4930805 0.5808886 0.4402996
-    ## [43] 0.2914644 0.6434553 0.6264694 0.2075440 0.6426067 0.5797128 0.4063202
-    ## [50] 0.4269316
+    ##  [1] 0.50615166 0.42899471 0.10853533 0.42332302 0.32180233 0.39483531
+    ##  [7] 0.69577035 0.38051789 0.38173482 0.53841695 0.53263463 0.22184067
+    ## [13] 0.55313144 0.17025498 0.38720382 0.20839549 0.58550593 0.28768349
+    ## [19] 0.27809062 0.31335406 0.60119497 0.22354595 0.54150297 0.03655037
+    ## [25] 0.36761096 0.11095769 0.53365764 0.40977841 0.27563187 0.56524795
+    ## [31] 0.43712756 0.38442131 0.27857972 0.63319300 0.34125209 0.53957136
+    ## [37] 0.45018524 0.57289272 0.48164109 0.21482200 0.58337124 0.14387720
+    ## [43] 0.53739571 0.57992584 0.42846915 0.40159840 0.43333539 0.43488343
+    ## [49] 0.33202454 0.18127904
 
 ``` r
 xseq = seq(-2,2, length.out = 30)
@@ -396,7 +438,7 @@ shade(object = mu.PI, lim = xseq) # mean uncertainty
 shade(object = sim.pi,lim = xseq)
 ```
 
-![](ch11_pset_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](ch11_pset_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 Given the pairs plot the model `log(lambda) <- a + b*pct + b2*age` woudl
 prob predict better but would be harder to understand the estimates.

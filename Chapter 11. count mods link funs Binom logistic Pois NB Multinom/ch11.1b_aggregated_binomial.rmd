@@ -1,0 +1,226 @@
+---
+title: 'Ch 11 part Ib: Aggregated binomial regression'
+output: github_document
+---
+
+### Aggregated binmoial model - Berkley admissions dataset
+
+This is a small dataset with department, acceptance rate, applicants and sex. 
+```{r}
+## R code 11.28
+suppressMessages(library(rethinking))
+r = rangi2
+data(UCBadmit)
+d <- UCBadmit
+d
+```
+
+These 12 rows are a summary of ~4500 applications -- they are aggregated already. 
+```{r}
+sum(d$applications)
+```
+
+
+### A Bayesian model of admission ~ sex  
+we make a index variable for sex, and model admit status as a function of sex; here we are saying a indicator term indexed over levels of sex predicts admit status. Admit is binomially distributed with probability p with total count "applications". 
+
+```{r, results = 'hide'}
+## R code 11.29
+dat_list <- list(
+    admit = d$admit,
+    applications = d$applications,
+    gid = ifelse( d$applicant.gender=="male" , 1 , 2 )
+)
+# formula 
+f11.7 = alist(
+  admit ~ dbinom( applications , p ) ,
+  logit(p) <- a[gid],
+  a[gid] ~ dnorm( 0 , 1.5 )
+)
+# fit model 
+m11.7 <- ulam(f11.7 , data=dat_list , chains=4 )
+precis( m11.7 , depth=2 )
+```
+
+The mean for probability of admisssion on the log odds scale is higher for males. Compute the contrast effect sizes on the logit scale and outcome scale. 
+
+The model was fit on the log odds (logit) scale so the contrast on the posterior tells the log odds difference between male and female, below: `diff_a`. If we want to *back transform that to a probability scale* we take the inverse logit transform to get the difference in probability of admission `diff_p`
+
+```{r}
+## R code 11.30
+post <- extract.samples(m11.7)
+diff_a <- post$a[,1] - post$a[,2]
+diff_p <- inv_logit(post$a[,1]) - inv_logit(post$a[,2])
+precis( list( diff_a=diff_a , diff_p=diff_p ) )
+```
+
+p admission male effect increases by 14% 
+
+```{r}
+par(mfrow = c(1,2))
+hist(diff_a , col = r, breaks = 50, xlab = "M-F difference in log odds");
+hist(diff_p, col = r, breaks = 50, xlab = "M-F difference in prob admit (inv_logit)")
+```
+
+
+```{r}
+## R code 11.31
+postcheck( m11.7 )
+
+```
+
+### a frequentist binomial model of admission ~ sex  
+
+Using the convention of n/total with weights = total.   
+
+
+```{r}
+suppressMessages(library(emmeans))
+f1 = admit/applications ~ 0 + applicant.gender
+fm = glm(formula = f1, family = binomial(link = 'logit'), data = d, weights = applications)
+```
+
+Compare the mcmc model and the frequentist model coefficients -- they are the same. 
+
+```{r}
+summary(fm)$coefficients
+precis(m11.7,depth = 2)
+```
+
+### Understanding model output from glm  
+```{r}
+summary(fm)
+```
+- **Deviance Residuals** For every data point the **deviance** is calculated and the model output **Deviance Residuals** is describing their distribution.  
+- **coefficients** The coefficients are on the logit scale -- they are log odds. To convert to probability we can do `exp(x)/(1+exp(x))`.  
+
+- **Null deviance**: this is used to compare to the line below it, residual deviance. The null model here is just using an intercept term without covariates, deviance. The deviance (see chapter 10 notes) is similar to KL divergence but we only calculate a score sum log q[i] - a log probability score for the data | model. This number is multiplied by -2 so that smaller deviance scores are better; but the absolute values are meaningless; we again need to compare 2 scores -- we compare the null deviance intercept only model to the residual deviance -- the deviance of our model and the smaller fit of the residual deviance indicates our model is capturing some informaiton. With the mcmc model we calculate the log pointwise predictive density but in the frequentist model we use the deviance values directly. 
+
+**Residual deviance**: See above.  
+
+AIC only useful in model comparison.  
+
+Number of Fisher Scoring iterations: not important.  
+
+Converting logit (log odds) coefficient estimates to probabilities: 
+
+```{r}
+# estimate 
+logit.fm = summary(fm)$coefficients[ ,1 ]
+exp(logit.fm) / (1 + exp(logit.fm))
+```
+
+
+### Contrast the male vs female effect on the log odds scale  
+
+This is how to do this [using emmeans for a simple 1 factor experiment](https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html)
+
+*In its out-of-the-box configuration, pairs() sets two defaults for summary(): adjust = "tukey" (multiplicity adjustment), and infer = c(FALSE, TRUE) (test statistics, not confidence intervals). You may override these, of course, by calling summary() on the result with different values for these. In the example above, EMMs for later factor levels are subtracted from those for earlier levels; if you want the comparisons to go in the other direction, use pairs(pigs.emm.s, reverse = TRUE). Also, in multi-factor situations, you may specify by factor(s) to perform the comparisons separately at the levels of those factors.*
+
+```{r}
+
+em = emmeans(object = fm, ~ applicant.gender)
+cres = pairs(em, reverse = TRUE)
+summary(cres, infer = c(TRUE,TRUE))
+
+```
+
+Graphical summary: 
+
+```{r}
+plot(em, comparisons = TRUE)
+```
+
+
+Another way using multcomp package: 
+
+```{r}
+suppressMessages(library(multcomp))
+ec = multcomp::glht(model = fm)
+summary(glht(fm, mcp(applicant.gender="Tukey")))
+
+```
+
+
+## Fitting the model with another index variable for department. 
+The above model assessed what the average male vs female admission rate was across all departments. Now we want to ask what is the average difference in probability of admission between male femal within departments. To do this we add a covariate for department -- each department gets its own log odds of admission but there is still universal adjustments that are the same for all departments for male vs female applicants. 
+
+```{r}
+d
+f2 = admit / applications ~ 0 + applicant.gender + dept 
+fm2 = glm(formula = f2,data = d)
+summary(fm2)
+```
+
+Now the male effect is slightly smaller than the female effect. Calculate contrasts: 
+
+```{r}
+em2 = emmeans(object = fm2, ~ applicant.gender)
+cres2 = pairs(em2, reverse = TRUE)
+summary(cres2, infer = c(TRUE,TRUE))
+```
+
+There is now no evidence of a preference for male applicants once the model accounts for the variation due to department. 
+
+### MCMC model of the model with added index variable for department. 
+Now repeat using th MCMC model with the indexing variable strategy from rethinking. 
+
+
+```{r, results = 'hide'}
+## R code 11.32
+dat_list$dept_id <- rep(1:6,each=2)
+#dat_list
+
+f11.8 = alist(
+  admit ~ dbinom(applications, p ),
+  # likelihood 
+  logit(p) <- a[gid] + delta[dept_id], 
+  # priors 
+  a[gid] ~ dnorm( 0 , 1.5 ),
+  delta[dept_id] ~ dnorm( 0 , 1.5 )
+)
+
+m11.8 <- ulam(flist = f11.8, data=dat_list , chains=4 , iter=4000 )
+precis( m11.8 , depth=2 )
+```
+
+```{r}
+postcheck(m11.8)
+```
+
+Now as above contrast on the log odds scale and the probability scale 
+
+```{r}
+## R code 11.33
+post <- extract.samples(m11.8)
+diff_a <- post$a[,1] - post$a[,2]
+diff_p <- inv_logit(post$a[,1]) - inv_logit(post$a[,2])
+precis( list( diff_a=diff_a , diff_p=diff_p ) )
+```
+
+
+The reason is that men and women applied to different departments.  
+
+```{r}
+suppressMessages(library(dagitty))
+set.seed(126)
+dag = dagitty::dagitty(
+"dag{
+G -> A
+G -> D -> A
+}")
+drawdag(dag)
+```
+
+There is a difference between knowing the direct causal effect of G -> A vs the total effect of G -> A. 
+
+In the DAG above, G influences A by influencing what department each G tends to apply to; G is a mediator, it mediates its effect through choice of D.  
+To know the direct effect of G -> A, we need to adjust for the mediator D. 
+
+
+
+```{r}
+sessionInfo()
+```
+
+

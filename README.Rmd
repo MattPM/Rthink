@@ -8,7 +8,8 @@ theme: united
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = TRUE
 )
 ```
 # Statistical Rethinking
@@ -16,12 +17,11 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-My notes, code, examples and problem set solutions for the textbook [Statistical Rethinking - *A Bayesian Course with Examples in R and Stan* by Richard McElreath](https://xcelab.net/rm/statistical-rethinking/)"  The .md documents for each chapter are readable.  
+My notes, code, examples and problem sets for the textbook [Statistical Rethinking - *A Bayesian Course with Examples in R and Stan* by Richard McElreath](https://xcelab.net/rm/statistical-rethinking/)"  The .md documents for each chapter are readable.  
 
 ### Course: 
 [updated 2022 lectures](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)   
 
-### my notes / code / problem sets
 [**Chapter 2**](https://github.com/MattPM/Rthink/blob/master/Chapter%202.%20Small%20Worlds%20and%20Large%20Worlds/ch2.md)  
 [**Chapter 3**](https://github.com/MattPM/Rthink/blob/master/Chapter%203.%20Sampling%20the%20Imaginary/ch3.md)  
 [**Chapter 4**](https://github.com/MattPM/Rthink/blob/master/Chapter%204.%20Geocentric%20Models/Ch4.md)  
@@ -31,7 +31,10 @@ My notes, code, examples and problem set solutions for the textbook [Statistical
 [**Chapter 8**](https://github.com/MattPM/Rthink/blob/master/chapter%208.%20interactions%20discrete%20and%20continuous/ch8.md)  
 [**Chapter 9**](https://github.com/MattPM/Rthink/blob/master/Chapter%209.%20Markov%20Chain%20Monte%20Carlo/ch9.md)  
 [**Chapter 10**](https://github.com/MattPM/Rthink/blob/master/Chapter%2010.%20GLMs%20and%20maximum%20entropy/ch10.md)  
-<!-- [**Chapter 11**]()   -->
+[**Ch 11 part I: GLMs and binomial regression**](https://github.com/MattPM/Rthink/blob/master/Chapter%2011.%20count%20mods%20link%20funs%20Binom%20logistic%20Pois%20NB%20Multinom/ch11.1_GLM_binomial.md)  
+[**Ch 11 part II: Poisson and Gamma Poisson (NB) regression**](https://github.com/MattPM/Rthink/blob/master/Chapter%2011.%20count%20mods%20link%20funs%20Binom%20logistic%20Pois%20NB%20Multinom/ch11.2_poisson.md)  
+[**Ch 11 part III: Multinomial and categorical models**](https://github.com/MattPM/Rthink/blob/master/Chapter%2011.%20count%20mods%20link%20funs%20Binom%20logistic%20Pois%20NB%20Multinom/ch11.3_multinomial.md)  
+[**Ch 11 p set**](https://github.com/MattPM/Rthink/blob/master/Chapter%2011.%20count%20mods%20link%20funs%20Binom%20logistic%20Pois%20NB%20Multinom/ch11_pset.md)  
 <!-- [**Chapter 12**]()   -->
 <!-- [**Chapter 13**]()   -->
 <!-- [**Chapter 14**]()   -->
@@ -182,35 +185,20 @@ generated quantities{
 
 
 ### Lectures  
-Chapters 1, 2 and 3  
-[1] Modeling context and introduction  
-[2] Bayesian Inference  
-Chapters 4 and 5  
-[3] Basic Regression  
-[4] Categories & Curves  
-Chapters 5 and 6	
-[5] Elemental Confounds    
-[6] Good & Bad Controls   
-Chapters 7, 8 and 9   
-[7] Overfitting  
-[8] Markov chain Monte Carlo  
-Chapters 10 and 11  
-[9] Generalized Linear Models  
-[10] Binomial GLMs  
-Chapters 11 and 12  
-[11] Poisson GLMs  
-[12] Ordered Categories  
-Chapter 13  
-[13] Multilevel Models  
-[14] Multi-Multilevel Models  
-Chapter 14  
-[15] Varying Slopes  
-[16] Gaussian Processes  
-Chapter 15  
-[17] Measurement Error  
-[18] Missing Data  
-Chapters 16 and 17  
-[19] Beyond GLMs: State-space Models, ODEs  
-[20] Horoscopes  
+Lecture playlist on Youtube: <[Statistical Rethinking 2022](https://www.youtube.com/playlist?list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN)>
 
+[//]: # (11 Feb SPP conflict , 25 Feb Winter Break conflict )
+
+| Week ## | Meeting date | Reading | Lectures |
+| ------- | -------------- | ------------- | ---------------------- |
+| Week 01 | 07 January  | Chapters 1, 2 and 3 | [1] <[The Golem of Prague](https://youtu.be/cclUd_HoRlo)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-01)> <br> [2] <[Bayesian Inference](https://www.youtube.com/watch?v=guTdrfycW2Q&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=2)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-02)> 
+| Week 02 | 14 January | Chapters 4 and 5 | [3] <[Basic Regression](https://www.youtube.com/watch?v=zYYBtxHWE0A)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-03)> <br> [4] <[Categories & Curves](https://youtu.be/QiHKdvAbYII)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-04)>
+| Week 03 | 21 January | Chapters 5 and 6 |  [5] <[Elemental Confounds](https://youtu.be/UpP-_mBvECI)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-05)> <br> [6] <[Good & Bad Controls](https://www.youtube.com/watch?v=NSuTaeW6Orc&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=6)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-06)>
+| Week 04 | 28 January | Chapters 7, 8 and 9 | [7] <[Overfitting](https://www.youtube.com/watch?v=odGAAJDlgp8&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=7)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-07)> <br> [8] <[Markov chain Monte Carlo](https://www.youtube.com/watch?v=Qqz5AJjyugM&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=8&pp=sAQB)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-08)>
+| Week 05 | 04 February | Chapters 10 and 11 | [9] <[Logistic and Binomial GLMs](https://www.youtube.com/watch?v=nPi5yGbfxuo&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=9)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-09)> <br> [10] <[Sensitivity and Poisson GLMs](https://www.youtube.com/watch?v=YrwL6t0kW2I&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=10)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-10)>
+| Week 06 | 11 February | Chapters 12 and 13 | [11] <[Ordered Categories](https://www.youtube.com/watch?v=-397DMPooR8&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=11)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-11)> <br> [12] <[Multilevel Models](https://www.youtube.com/watch?v=SocRgsf202M&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=12)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-12)>
+| Week 07 | 18 February | Chapters 13 and 14 | [13] <[Multi-Multilevel Models](https://www.youtube.com/watch?v=n2aJYtuGu54&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=13)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-13)> <br> [14] <[Correlated varying effects](https://www.youtube.com/watch?v=XDoAglqd7ss&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=14)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-14)>
+| Week 08 | 25 February | Chapter 14 | [15] <[Social Networks](https://www.youtube.com/watch?v=L_QumFUv7C8&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=15)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-15)> <br> [16] <[Gaussian Processes](https://www.youtube.com/watch?v=PIuqxOBJqLU&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=16)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-16)>
+| Week 09 | 04 March | Chapter 15 | [17] <[Measurement Error](https://www.youtube.com/watch?v=lTFAB6QmwHM&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=17)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-17)> <br> [18] <[Missing Data](https://www.youtube.com/watch?v=oMiSb8GKR0o&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=18)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-18)>
+| Week 10 | 11 March | Chapters 16 and 17 | [19] <[Beyond GLMs](https://www.youtube.com/watch?v=Doaod09YitA&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=19)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-19)> <br> [20] <[Horoscopes](https://www.youtube.com/watch?v=qV3eos7maGs&list=PLDcUM9US4XdMROZ57-OIRtIK0aOynbgZN&index=20)> <[(Slides)](https://speakerdeck.com/rmcelreath/statistical-rethinking-2022-lecture-20)>
 
